@@ -1,0 +1,765 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>软件工程学籍管理系统API | ShallWe Talk</title>
+  <meta name="author" content="6carol6">
+  
+  <meta name="description" content="该系统模拟一个高校的研究生学籍管理系统，从学生、教务员、管理员三个角度，基本实现研究生管理系统的所有功能。系统的API定义如下：">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="软件工程学籍管理系统API"/>
+  <meta property="og:site_name" content="ShallWe Talk"/>
+
+  
+    <meta property="og:image" content=""/>
+  
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="ShallWe Talk" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">ShallWe Talk</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div>
+</header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2013-04-20T07:52:00.000Z"><a href="/2013/04/20/2013-04-20-software-engineer-api/">2013-04-20</a></time>
+      
+      
+  
+    <h1 class="title">软件工程学籍管理系统API</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>该系统模拟一个高校的研究生学籍管理系统，从学生、教务员、管理员三个角度，基本实现研究生管理系统的所有功能。<br>系统的API定义如下：<br><a id="more"></a></p>
+<p>#API</p>
+<p>###Index<br><a href="#3">管理员</a>  </p>
+<p><a href="#3-1">学籍信息</a><br><a href="#3-1-1">添加学籍信息页面</a>  <a href="#3-1-2">学籍信息统计</a>  <a href="#3-1-3">查看与修改学籍信息</a>  <a href="#3-1-4">学分统计</a>  </p>
+<p><a href="#3-2">选课安排</a><br><a href="#3-2-1">设置选课起止时间</a>  <a href="#3-2-2">公共课的添加与停课</a>  <a href="#3-2-3">查看选课情况</a>  <a href="#3-2-4">增选与退选</a>  </p>
+<p><a href="#class">类的定义</a>  </p>
+<hr>
+<p></p><h3><a name="3">管理员/pages/admin</a></h3>  <p></p>
+<p></p><h4><a name="3-1">学籍信息/pages/admin/SchoolRoll</a></h4>  <p></p>
+<h5><a name="3-1-1">添加学籍信息页面/Add.jsp</a></h5>  
+
+<p>功能：包含已添加学生学籍列表，和正要添加的输入框。</p>
+<p><code>action name:</code> AddSchoolRoll<br><code>servlet name(Class):</code> SampleProject.Admin.SchoolRoll.Add<br><code>page value:</code><br>(Student student)<br>(LoginForm loginForm)<br>其中在本页面中要用到的成员列表  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">class</th>
+<th style="text-align:left">name</th>
+<th style="text-align:left">explanation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">LoginForm</td>
+<td style="text-align:left">username</td>
+<td style="text-align:left">用户名(对于本页面赋值为学生学号)</td>
+</tr>
+<tr>
+<td style="text-align:left">LoginForm</td>
+<td style="text-align:left">password</td>
+<td style="text-align:left">密码</td>
+</tr>
+<tr>
+<td style="text-align:left">LoginForm</td>
+<td style="text-align:left">role</td>
+<td style="text-align:left">角色（0:学生/1:教务员/2:管理员 此项为0）</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">no</td>
+<td style="text-align:left">学号</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">name</td>
+<td style="text-align:left">学生姓名</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">gender</td>
+<td style="text-align:left">性别</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">birth</td>
+<td style="text-align:left">出生日期</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">id</td>
+<td style="text-align:left">身份证号码</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">dname</td>
+<td style="text-align:left">院系名称（通过查院系表得到）</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">mname</td>
+<td style="text-align:left">所在专业</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">domain</td>
+<td style="text-align:left">专业方向</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">enrollyear</td>
+<td style="text-align:left">入学年份</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">grade</td>
+<td style="text-align:left">所在年级</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">schoolyear</td>
+<td style="text-align:left">学制</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">tname</td>
+<td style="text-align:left">导师姓名（通过查教师表）</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">state</td>
+<td style="text-align:left">学籍状态（在籍/不在籍）</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">nationality</td>
+<td style="text-align:left">国籍</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">property</td>
+<td style="text-align:left">培养性质</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">mord</td>
+<td style="text-align:left">博士/硕士</td>
+</tr>
+</tbody>
+</table>
+<p>说明：院系名称和导师姓名分别在院系表和教师表中查询。<br>院系名称应该是一个选择单？然后value与院系号对应</p>
+<p><code>action return:</code><br>SUCCESS =&gt; /pages/admin/SchoolRoll/Add.jsp<br>ERROR =&gt; /pages/admin/SchoolRoll/Add.jsp(with validation error”添加失败”)</p>
+<h5><a name="3-1-2">学籍信息统计/Statistics.jsp</a></h5>  
+
+<p>功能：整理各个院系学生人数</p>
+<p><code>action name:</code> StatisticsSchoolRoll<br><code>servlet name(Class):</code> SampleProject.Admin.SchoolRoll.Statistics<br><code>page value:</code>   </p>
+<p>(int[][] map)二维数组表示 院系：人数 </p>
+<p><code>action return:</code><br>SUCCESS =&gt; /pages/admin/SchoolRoll/Statistics.jsp<br>ERROR =&gt; /pages/admin/SchoolRoll/Statistics.jsp(with validation error”数据库错误”)</p>
+<h5><a name="3-1-3">查看与修改学籍信息/Alter.jsp</a></h5>  
+
+<p>功能：查询已添加学生的学籍信息,可根据学生学号查询特定行</p>
+<p><code>action name:</code> AlterSchoolRoll<br><code>servlet name(Class):</code> SampleProject.Admin.SchoolRoll.Alter<br><code>page value:</code>   </p>
+<p>(Student student)<br>(Department department)</p>
+<p>其中在本页面中要用到的成员列表  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">class</th>
+<th style="text-align:left">name</th>
+<th style="text-align:left">explanation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">no</td>
+<td style="text-align:left">学号</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">name</td>
+<td style="text-align:left">学生姓名</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">gender</td>
+<td style="text-align:left">性别</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">birth</td>
+<td style="text-align:left">出生日期</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">id</td>
+<td style="text-align:left">身份证号码</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">dname</td>
+<td style="text-align:left">院系名称</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">mname</td>
+<td style="text-align:left">所在专业</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">domain</td>
+<td style="text-align:left">专业方向</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">enrollyear</td>
+<td style="text-align:left">入学年份</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">grade</td>
+<td style="text-align:left">所在年级</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">schoolyear</td>
+<td style="text-align:left">学制</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">tname</td>
+<td style="text-align:left">导师姓名</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">state</td>
+<td style="text-align:left">学籍状态（在籍/不在籍）</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">nationality</td>
+<td style="text-align:left">国籍</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">property</td>
+<td style="text-align:left">培养性质</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">mord</td>
+<td style="text-align:left">博士/硕士</td>
+</tr>
+</tbody>
+</table>
+<p>说明：院系名称和导师姓名分别在院系表和教师表中查询。<br>修改学生信息那里院系名称应该是可选择列表</p>
+<p><code>action return:</code><br>SUCCESS =&gt; /pages/admin/SchoolRoll/Alter.jsp<br>ERROR =&gt; /pages/admin/SchoolRoll/Alter.jsp(with validation error”修改失败”)</p>
+<h5><a name="3-1-4">学分统计/CreditStatistics.jsp</a></h5>  
+
+<p>功能：列表 |学号|姓名|院系|总学分数|</p>
+<p><code>action name:</code> CreditStatistics<br><code>servlet name(Class):</code> SampleProject.Admin.SchoolRoll.CreditStatistics<br><code>page value:</code><br>(Credit creditStat)</p>
+<table>
+<thead>
+<tr>
+<th>class</th>
+<th style="text-align:left">name</th>
+<th>explanation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Credit</td>
+<td style="text-align:left">no</td>
+<td>学号</td>
+</tr>
+<tr>
+<td>Credit</td>
+<td style="text-align:left">name</td>
+<td>学生姓名</td>
+</tr>
+<tr>
+<td>Credit</td>
+<td style="text-align:left">department</td>
+<td>院系</td>
+</tr>
+<tr>
+<td>Credit</td>
+<td style="text-align:left">credit</td>
+<td>已修学分数</td>
+</tr>
+</tbody>
+</table>
+<p>说明：其中已修学分数通过查课程Course、选课表SCourse、学生表Student获取</p>
+<p><code>action return:</code><br>SUCCESS =&gt; /pages/admin/SchoolRoll/CreditStatistics.jsp<br>ERROR =&gt; /pages/admin/SchoolRoll/CreditStatistics.jsp(with validation error”查询失败”)</p>
+<p></p><h4><a name="3-2">选课安排/pages/admin/CourseArrangement</a></h4>  <p></p>
+<h5><a name="3-2-1">设置选课起止时间/pages/admin/CourseArrangement/SetChooseCoursesTime</a></h5>  
+
+<p>功能：设置全校学生选课起止时间<br><code>action name:</code> SetChooseCoursesTime<br><code>servlet name(Class):</code> SampleProject.Admin.CourseArrangement.SetChooseCoursesTime<br><code>page value:</code><br>(Date start)<br>(Date end)</p>
+<p><code>action return:</code><br>SUCCESS =&gt; /pages/admin/CourseArrangement/SetChooseCoursesTime.jsp(“设置成功”)<br>ERROR =&gt; /pages/admin/CourseArrangement/SetChooseCoursesTime.jsp(with validation error”查询失败”)  </p>
+<p></p><h5><a name="3-2-2">公共课的添加与停课/pages/admin/CourseArrangement/AddOrDelete</a></h5><br>功能：显示已有课程列表，开头有个添加框，每个上面都有删除按钮。<br>开设院系名称为选择框，面向类型为选择框<p></p>
+<p><code>action name:</code> AddOrDelete<br><code>servlet name(Class):</code> SampleProject.Admin.CourseArrangement.AddOrDelete<br><code>page value:</code><br>PublicCourse publicCourse</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">class</th>
+<th style="text-align:left">name</th>
+<th style="text-align:left">explanation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">PublicCourse</td>
+<td style="text-align:left">cno</td>
+<td style="text-align:left">课程号</td>
+</tr>
+<tr>
+<td style="text-align:left">PublicCourse</td>
+<td style="text-align:left">enname</td>
+<td style="text-align:left">英文名称</td>
+</tr>
+<tr>
+<td style="text-align:left">PublicCourse</td>
+<td style="text-align:left">chname</td>
+<td style="text-align:left">中文名称</td>
+</tr>
+<tr>
+<td style="text-align:left">PublicCourse</td>
+<td style="text-align:left">hour</td>
+<td style="text-align:left">学时</td>
+</tr>
+<tr>
+<td style="text-align:left">PublicCourse</td>
+<td style="text-align:left">credit</td>
+<td style="text-align:left">学分</td>
+</tr>
+<tr>
+<td style="text-align:left">PublicCourse</td>
+<td style="text-align:left">dno</td>
+<td style="text-align:left">开设院系号</td>
+</tr>
+<tr>
+<td style="text-align:left">PublicCourse</td>
+<td style="text-align:left">campus</td>
+<td style="text-align:left">校区</td>
+</tr>
+<tr>
+<td style="text-align:left">PublicCourse</td>
+<td style="text-align:left">startweek</td>
+<td style="text-align:left">起始周</td>
+</tr>
+<tr>
+<td style="text-align:left">PublicCourse</td>
+<td style="text-align:left">endweek</td>
+<td style="text-align:left">结束周</td>
+</tr>
+<tr>
+<td style="text-align:left">PublicCourse</td>
+<td style="text-align:left">maxnum</td>
+<td style="text-align:left">最大人数</td>
+</tr>
+<tr>
+<td style="text-align:left">PublicCourse</td>
+<td style="text-align:left">totalnum</td>
+<td style="text-align:left">总人数</td>
+</tr>
+<tr>
+<td style="text-align:left">PublicCourse</td>
+<td style="text-align:left">type</td>
+<td style="text-align:left">面向类型</td>
+</tr>
+<tr>
+<td style="text-align:left">PublicCourse</td>
+<td style="text-align:left">num</td>
+<td style="text-align:left">外院系可选人数</td>
+</tr>
+</tbody>
+</table>
+<p>说明：开设院系号和面向类型注意页面选择框的值的对应</p>
+<p><code>action return:</code><br>SUCCESS =&gt; /pages/admin/CourseArrangement/AddOrDelete.jsp(“添加成功”)<br>ERROR =&gt; /pages/admin/CourseArrangement/AddOrDelete.jsp(with validation error”添加失败”)  </p>
+<p></p><h5><a name="3-2-3">查看选课情况/pages/admin/CourseArrangement/Search</a></h5><br>功能：根据学生学号查询学生选课情况。<br>输入学号，跳转到学生的“查看已选课程”页面<p></p>
+<p><code>action name:</code> Search<br><code>servlet name(Class):</code> SampleProject.Admin.CourseArrangement.Search<br><code>page value:</code><br>(char sno)</p>
+<p><code>action return:</code><br>SUCCESS =&gt; /pages/student/……(学生的“查看已选课程页面。。。”)<br>ERROR =&gt; /pages/admin/CourseArrangement/Search.jsp(with validation error”查询失败”)  </p>
+<p></p><h5><a name="3-2-4">增选与退选/pages/admin/CourseArrangement/ChooseOrDelCourse</a></h5><br>功能：输入学生学号，选择是选课还是退选，跳到该学生选课/退选时候的页面。（这个可不可以实现？）  <p></p>
+<p><code>action name:</code> ChooseOrDelCourse<br><code>servlet name(Class):</code> SampleProject.Admin.CourseArrangement.ChooseOrDelCourse<br><code>page value:</code><br>(char sno)<br>(int type)<br>type=0表示选课，type=1表示退选</p>
+<p><code>action return:</code><br>SUCCESS type=0 =&gt; /pages/student/……(学生的“选课页面。。。”)<br>       type=1 =&gt; /pages/student/……(学生的“退选页面。。。”)<br>ERROR =&gt; /pages/admin/CourseArrangement/ChooseOrDelCourse.jsp(with validation error”选课失败”)  </p>
+<p></p><h5><a name="class">类的定义</a></h5><br><code>为什么定义类？</code><br>类的定义便于在程序中复用。比如教务员、管理员和学生都要查询学生信息。<br>对于学生来说，只需要查个人的信息，在查询时只需要建立Student类的一个实例。<br>对于管理员和教务员来说，查询的往往是一类学生的信息，在查询时就需要建立Student的List。  <p></p>
+<p>Class: Student(未完成，还要加上学生部分的)</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">name</th>
+<th style="text-align:left">explanation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">no</td>
+<td style="text-align:left">学号</td>
+</tr>
+<tr>
+<td style="text-align:left">name</td>
+<td style="text-align:left">学生姓名</td>
+</tr>
+<tr>
+<td style="text-align:left">gender</td>
+<td style="text-align:left">性别</td>
+</tr>
+<tr>
+<td style="text-align:left">birth</td>
+<td style="text-align:left">出生日期</td>
+</tr>
+<tr>
+<td style="text-align:left">id</td>
+<td style="text-align:left">身份证号码</td>
+</tr>
+<tr>
+<td style="text-align:left">dname</td>
+<td style="text-align:left">院系名称（通过查院系表得到）</td>
+</tr>
+<tr>
+<td style="text-align:left">mname</td>
+<td style="text-align:left">所在专业</td>
+</tr>
+<tr>
+<td style="text-align:left">domain</td>
+<td style="text-align:left">专业方向</td>
+</tr>
+<tr>
+<td style="text-align:left">enrollyear</td>
+<td style="text-align:left">入学年份</td>
+</tr>
+<tr>
+<td style="text-align:left">grade</td>
+<td style="text-align:left">所在年级</td>
+</tr>
+<tr>
+<td style="text-align:left">schoolyear</td>
+<td style="text-align:left">学制</td>
+</tr>
+<tr>
+<td style="text-align:left">tname</td>
+<td style="text-align:left">导师姓名（通过查教师表）</td>
+</tr>
+<tr>
+<td style="text-align:left">state</td>
+<td style="text-align:left">学籍状态（在籍/不在籍）</td>
+</tr>
+<tr>
+<td style="text-align:left">nationality</td>
+<td style="text-align:left">国籍</td>
+</tr>
+<tr>
+<td style="text-align:left">property</td>
+<td style="text-align:left">培养性质</td>
+</tr>
+<tr>
+<td style="text-align:left">mord</td>
+<td style="text-align:left">博士/硕士</td>
+</tr>
+</tbody>
+</table>
+<p>Class: Credit</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">name</th>
+<th style="text-align:left">explanation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">no</td>
+<td style="text-align:left">学号</td>
+</tr>
+<tr>
+<td style="text-align:left">name</td>
+<td style="text-align:left">学生姓名</td>
+</tr>
+<tr>
+<td style="text-align:left">department</td>
+<td style="text-align:left">院系</td>
+</tr>
+<tr>
+<td style="text-align:left">credit</td>
+<td style="text-align:left">已修学分数</td>
+</tr>
+</tbody>
+</table>
+<p>说明：其中已修学分数通过查课程Course、选课表SCourse、学生表Student获取</p>
+<p>Class: PublicCourse</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">name</th>
+<th style="text-align:left">explanation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">cno</td>
+<td style="text-align:left">课程号</td>
+</tr>
+<tr>
+<td style="text-align:left">enname</td>
+<td style="text-align:left">英文名称</td>
+</tr>
+<tr>
+<td style="text-align:left">chname</td>
+<td style="text-align:left">中文名称</td>
+</tr>
+<tr>
+<td style="text-align:left">hour</td>
+<td style="text-align:left">学时</td>
+</tr>
+<tr>
+<td style="text-align:left">credit</td>
+<td style="text-align:left">学分</td>
+</tr>
+<tr>
+<td style="text-align:left">dno</td>
+<td style="text-align:left">开设院系号</td>
+</tr>
+<tr>
+<td style="text-align:left">campus</td>
+<td style="text-align:left">校区</td>
+</tr>
+<tr>
+<td style="text-align:left">startweek</td>
+<td style="text-align:left">起始周</td>
+</tr>
+<tr>
+<td style="text-align:left">endweek</td>
+<td style="text-align:left">结束周</td>
+</tr>
+<tr>
+<td style="text-align:left">maxnum</td>
+<td style="text-align:left">最大人数</td>
+</tr>
+<tr>
+<td style="text-align:left">totalnum</td>
+<td style="text-align:left">总人数</td>
+</tr>
+<tr>
+<td style="text-align:left">type</td>
+<td style="text-align:left">面向类型</td>
+</tr>
+<tr>
+<td style="text-align:left">num</td>
+<td style="text-align:left">外院系可选人数</td>
+</tr>
+</tbody>
+</table>
+<p>说明：其中总人数作安排教室用</p>
+
+      
+    </div>
+    <footer>
+      
+        
+  
+  <div class="categories">
+    <a href="/categories/software-engineer/">software engineer</a>, <a href="/categories/software-engineer/API/">API</a>
+  </div>
+
+        
+        
+  <div class="addthis addthis_toolbox addthis_default_style">
+    
+      <a class="addthis_button_facebook_like" fb:like:layout="button_count"></a>
+    
+    
+      <a class="addthis_button_tweet"></a>
+    
+    
+      <a class="addthis_button_google_plusone" g:plusone:size="medium"></a>
+    
+    
+      <a class="addthis_button_pinterest_pinit" pi:pinit:layout="horizontal"></a>
+    
+    <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js"></script>
+
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+<section id="comment">
+  <h1 class="title">Kommentare</h1>
+
+  
+      <div id="fb-root"></div>
+<script>
+  (function(d, s, id) {
+    var js, fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) return;
+    js = d.createElement(s); js.id = id;
+    js.src = "//connect.facebook.net/en_US/all.js#xfbml=1&appId=123456789012345";
+    fjs.parentNode.insertBefore(js, fjs);
+  }(document, 'script', 'facebook-jssdk'));
+</script>
+
+<div class="fb-comments" data-href="http://yoursite.com/2013/04/20/2013-04-20-software-engineer-api/index.html" data-num-posts="5" data-width="840" data-colorscheme="light"></div>
+      
+  
+</section>
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="Suche">
+    <input type="hidden" name="q" value="site:yoursite.com">
+  </form>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">Kategorien</h3>
+  <ul class="entry">
+  
+    <li><a href="/categories/software-engineer/API/">API</a><small>1</small></li>
+  
+    <li><a href="/categories/Beijing/">Beijing</a><small>1</small></li>
+  
+    <li><a href="/categories/C语言学习笔记/">C语言学习笔记</a><small>1</small></li>
+  
+    <li><a href="/categories/leetcode/HashTable/">HashTable</a><small>1</small></li>
+  
+    <li><a href="/categories/source-code/JXIO/">JXIO</a><small>1</small></li>
+  
+    <li><a href="/categories/language/Japanese/">Japanese</a><small>2</small></li>
+  
+    <li><a href="/categories/paper/NLP/">NLP</a><small>1</small></li>
+  
+    <li><a href="/categories/Spark/RDD/">RDD</a><small>1</small></li>
+  
+    <li><a href="/categories/Security/">Security</a><small>1</small></li>
+  
+    <li><a href="/categories/Spark/">Spark</a><small>2</small></li>
+  
+    <li><a href="/categories/source-code/Spark/">Spark</a><small>5</small></li>
+  
+    <li><a href="/categories/leetcode/Two-Pointers/">Two Pointers</a><small>1</small></li>
+  
+    <li><a href="/categories/unity/UGUI/">UGUI</a><small>1</small></li>
+  
+    <li><a href="/categories/unity/animation/">animation</a><small>1</small></li>
+  
+    <li><a href="/categories/blog/">blog</a><small>3</small></li>
+  
+    <li><a href="/categories/coding/">coding</a><small>1</small></li>
+  
+    <li><a href="/categories/coding/compiler/">compiler</a><small>1</small></li>
+  
+    <li><a href="/categories/Spark/configuration/">configuration</a><small>1</small></li>
+  
+    <li><a href="/categories/leetcode/divide-and-conquer/">divide and conquer</a><small>1</small></li>
+  
+    <li><a href="/categories/dp/">dp</a><small>1</small></li>
+  
+    <li><a href="/categories/leetcode/dp/">dp</a><small>1</small></li>
+  
+    <li><a href="/categories/music/guitar/">guitar</a><small>1</small></li>
+  
+    <li><a href="/categories/language/">language</a><small>2</small></li>
+  
+    <li><a href="/categories/leetcode/">leetcode</a><small>9</small></li>
+  
+    <li><a href="/categories/language/Japanese/lyric/">lyric</a><small>1</small></li>
+  
+    <li><a href="/categories/mapreduce/">mapreduce</a><small>1</small></li>
+  
+    <li><a href="/categories/python/matplotlib/">matplotlib</a><small>1</small></li>
+  
+    <li><a href="/categories/music/">music</a><small>1</small></li>
+  
+    <li><a href="/categories/paper/">paper</a><small>2</small></li>
+  
+    <li><a href="/categories/programming-language/">programming language</a><small>1</small></li>
+  
+    <li><a href="/categories/python/">python</a><small>1</small></li>
+  
+    <li><a href="/categories/paper/scheduler/">scheduler</a><small>1</small></li>
+  
+    <li><a href="/categories/software-engineer/">software engineer</a><small>1</small></li>
+  
+    <li><a href="/categories/Spark/RDD/source-code/">source code</a><small>1</small></li>
+  
+    <li><a href="/categories/source-code/">source code</a><small>6</small></li>
+  
+    <li><a href="/categories/spark/">spark</a><small>2</small></li>
+  
+    <li><a href="/categories/unity/">unity</a><small>2</small></li>
+  
+  </ul>
+</div>
+
+
+  
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner">
+<div class="alignleft">
+  <script src="//dn-lbstatics.qbox.me/lbservice/busuanzi/2.0/busuanzi.mini.js"/></script>
+  <span id="busuanzi_container_site_uv">已经有<span id="busuanzi_value_site_uv"></span>人次访问carolz的小站啦 ( •̀ ω •́ )y</span>
+  <br /><br />
+  
+  &copy; 2017 6carol6
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>

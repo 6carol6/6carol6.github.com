@@ -1,0 +1,251 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>软件工程demo运行概述 | ShallWe Talk</title>
+  <meta name="author" content="6carol6">
+  
+  <meta name="description" content="demo名称：SampleProject请各位在群共享中下载。  
+在/WEB-INF/src/web.xml有一个&amp;lt;welcome-file-list&amp;gt;标签，用于指出入口页面，这里是index.html。然后我们进入WEB-INF看看index.html里的内容。">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="软件工程demo运行概述"/>
+  <meta property="og:site_name" content="ShallWe Talk"/>
+
+  
+    <meta property="og:image" content=""/>
+  
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="ShallWe Talk" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">ShallWe Talk</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div>
+</header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2013-04-20T15:29:00.000Z"><a href="/2013/04/20/2013-04-20-school-management-system-outline/">2013-04-20</a></time>
+      
+      
+  
+    <h1 class="title">软件工程demo运行概述</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>demo名称：SampleProject<br>请各位在群共享中下载。  </p>
+<p>在<code>/WEB-INF/src/web.xml</code>有一个<code>&lt;welcome-file-list&gt;</code>标签，用于指出入口页面，这里是index.html。<br>然后我们进入WEB-INF看看index.html里的内容。  </p>
+<a id="more"></a>
+<figure class="highlight html"><figcaption><span>index.html</span></figcaption><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="meta">&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"&gt;</span></div><div class="line"><span class="tag">&lt;<span class="name">html</span>&gt;</span></div><div class="line"><span class="tag">&lt;<span class="name">head</span>&gt;</span></div><div class="line">    <span class="tag">&lt;<span class="name">META</span> <span class="attr">HTTP-EQUIV</span>=<span class="string">"Refresh"</span> <span class="attr">CONTENT</span>=<span class="string">"0;URL=Login"</span>&gt;</span></div><div class="line"><span class="tag">&lt;/<span class="name">head</span>&gt;</span></div><div class="line"></div><div class="line"><span class="tag">&lt;<span class="name">body</span>&gt;</span></div><div class="line"><span class="tag">&lt;<span class="name">p</span>&gt;</span>Loading ...<span class="tag">&lt;/<span class="name">p</span>&gt;</span></div><div class="line"><span class="tag">&lt;/<span class="name">body</span>&gt;</span></div><div class="line"><span class="tag">&lt;/<span class="name">html</span>&gt;</span></div></pre></td></tr></table></figure>
+<p>可以看到第4行有一个到Login的action的重定向。<br>关于这个重定向的说明，可以参考<a href="http://www.internetofficer.com/seo/html-redirect/" target="_blank" rel="external">这里</a>。<br>通过查找struts.xml文件，可以找到被include的SampleProject.xml,<br>里面可以找到重定向的目标，也就是action:Login  </p>
+<figure class="highlight xml"><figcaption><span>SampleProject.xml</span></figcaption><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div></pre></td><td class="code"><pre><div class="line">&lt;?xml version="1.0" encoding="UTF-8" ?&gt;</div><div class="line"><span class="meta">&lt;!DOCTYPE struts PUBLIC</span></div><div class="line"><span class="meta">        "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"</span></div><div class="line"><span class="meta">        "http://struts.apache.org/dtds/struts-2.0.dtd"&gt;</span></div><div class="line"></div><div class="line"><span class="tag">&lt;<span class="name">struts</span>&gt;</span></div><div class="line">    <span class="tag">&lt;<span class="name">package</span> <span class="attr">name</span>=<span class="string">"SampleProject"</span> <span class="attr">namespace</span>=<span class="string">"/"</span> <span class="attr">extends</span>=<span class="string">"default"</span>&gt;</span></div><div class="line"></div><div class="line">        <span class="tag">&lt;<span class="name">action</span> <span class="attr">name</span>=<span class="string">"Login_*"</span> <span class="attr">method</span>=<span class="string">"&#123;1&#125;"</span> <span class="attr">class</span>=<span class="string">"SampleProject.Login"</span>&gt;</span></div><div class="line">            <span class="tag">&lt;<span class="name">result</span> <span class="attr">name</span>=<span class="string">"input"</span>&gt;</span>pages/Login.jsp<span class="tag">&lt;/<span class="name">result</span>&gt;</span></div><div class="line">            <span class="tag">&lt;<span class="name">result</span> <span class="attr">name</span>=<span class="string">"Student"</span> <span class="attr">type</span>=<span class="string">"redirectAction"</span>&gt;</span></div><div class="line">            	student/StuInfo.action?id=$&#123;username&#125;<span class="tag">&lt;/<span class="name">result</span>&gt;</span></div><div class="line">            <span class="tag">&lt;<span class="name">result</span> <span class="attr">name</span>=<span class="string">"Teacher"</span> <span class="attr">type</span>=<span class="string">"redirectAction"</span>&gt;</span></div><div class="line">            	teacher/TeacherInfo.action?id=$&#123;username&#125;<span class="tag">&lt;/<span class="name">result</span>&gt;</span></div><div class="line">            <span class="tag">&lt;<span class="name">result</span> <span class="attr">name</span>=<span class="string">"Admin"</span> <span class="attr">type</span>=<span class="string">"redirectAction"</span>&gt;</span></div><div class="line">            	admin/AdminInfo.action?id=$&#123;username&#125;<span class="tag">&lt;/<span class="name">result</span>&gt;</span></div><div class="line">        <span class="tag">&lt;/<span class="name">action</span>&gt;</span></div><div class="line"></div><div class="line">        <span class="tag">&lt;<span class="name">action</span> <span class="attr">name</span>=<span class="string">"*"</span> <span class="attr">class</span>=<span class="string">"SampleProject.ExampleSupport"</span>&gt;</span></div><div class="line">            <span class="tag">&lt;<span class="name">result</span>&gt;</span>/pages/error.jsp<span class="tag">&lt;/<span class="name">result</span>&gt;</span></div><div class="line">        <span class="tag">&lt;/<span class="name">action</span>&gt;</span></div><div class="line"></div><div class="line">        <span class="comment">&lt;!-- Add actions here --&gt;</span></div><div class="line">    <span class="tag">&lt;/<span class="name">package</span>&gt;</span></div><div class="line"><span class="tag">&lt;/<span class="name">struts</span>&gt;</span></div></pre></td></tr></table></figure>
+<p>在index.html中，我们并没有给Login传递任何参数，所以这里会调用对应class，<br>也就是<code>SampleProject.Login</code>的默认方法<code>execute()</code>。  </p>
+<figure class="highlight java"><figcaption><span>Login.java</span></figcaption><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">package</span> SampleProject;</div><div class="line"></div><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Login</span> <span class="keyword">extends</span> <span class="title">ExampleSupport</span> </span>&#123;</div><div class="line"></div><div class="line">	<span class="function"><span class="keyword">public</span> String <span class="title">execute</span><span class="params">()</span> <span class="keyword">throws</span> Exception </span>&#123;</div><div class="line"></div><div class="line">        <span class="keyword">if</span> (isInvalid(getUsername())) <span class="keyword">return</span> INPUT;</div><div class="line"></div><div class="line">        <span class="keyword">if</span> (isInvalid(getPassword())) <span class="keyword">return</span> INPUT;</div><div class="line"></div><div class="line">        <span class="comment">/**TO DO*/</span></div><div class="line">        String type = <span class="string">""</span>;</div><div class="line">        <span class="keyword">if</span>(getIdentity().equalsIgnoreCase(<span class="string">"0"</span>)) type = <span class="string">"Student"</span>;</div><div class="line">        <span class="keyword">else</span> <span class="keyword">if</span>(getIdentity().equalsIgnoreCase(<span class="string">"1"</span>)) type = <span class="string">"Teacher"</span>;</div><div class="line">        <span class="keyword">else</span> <span class="keyword">if</span>(getIdentity().equalsIgnoreCase(<span class="string">"2"</span>)) type = <span class="string">"Admin"</span>;</div><div class="line">        </div><div class="line">        <span class="keyword">if</span>(getUsername().equalsIgnoreCase(<span class="string">"admin"</span>))</div><div class="line">        &#123;</div><div class="line">        	getSession().put(<span class="string">"password"</span>, getPassword());</div><div class="line">        	<span class="keyword">return</span> type;</div><div class="line">        &#125;</div><div class="line">        <span class="keyword">else</span> addActionError(<span class="string">"Login Error!用户名是admin啊"</span>);</div><div class="line">        	</div><div class="line">        <span class="keyword">return</span> INPUT;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">boolean</span> <span class="title">isInvalid</span><span class="params">(String value)</span> </span>&#123;</div><div class="line">        <span class="keyword">return</span> (value == <span class="keyword">null</span> || value.length() == <span class="number">0</span>);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="keyword">private</span> String username;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">getUsername</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="keyword">return</span> username;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setUsername</span><span class="params">(String username)</span> </span>&#123;</div><div class="line">        <span class="keyword">this</span>.username = username;</div><div class="line">        System.out.println(username);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="keyword">private</span> String password;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">getPassword</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="keyword">return</span> password;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setPassword</span><span class="params">(String password)</span> </span>&#123;</div><div class="line">        <span class="keyword">this</span>.password = password;</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    <span class="keyword">private</span> String identity;</div><div class="line">    </div><div class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">getIdentity</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="keyword">return</span> identity;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setIdentity</span><span class="params">(String identity)</span> </span>&#123;</div><div class="line">        <span class="keyword">this</span>.identity = identity;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>可以看到验证了姓名之后就会<code>return INPUT</code>,<br>而在SampleProject.xml中，我们定义了收到input返回值之后会重定向到pages/Login.jsp  </p>
+<figure class="highlight"><figcaption><span>Login.jsp</span></figcaption><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line">&lt;%@ page contentType=<span class="string">"text/html; charset=UTF-8"</span> %&gt;</div><div class="line">&lt;%@ taglib prefix=<span class="string">"s"</span> uri=<span class="string">"/struts-tags"</span> %&gt;</div><div class="line">&lt;html&gt;</div><div class="line">&lt;head&gt;</div><div class="line">    &lt;title&gt;Login&lt;/title&gt;</div><div class="line">&lt;/head&gt;</div><div class="line">&lt;body&gt;</div><div class="line">&lt;h1&gt;研究生学籍管理系统&lt;/h1&gt;</div><div class="line">&lt;s:form action=<span class="string">"Login"</span> validate=<span class="string">"true"</span>&gt;</div><div class="line">	&lt;s:actionerror /&gt;</div><div class="line">    &lt;s:textfield key=<span class="string">"username"</span>/&gt;</div><div class="line">    &lt;s:password key=<span class="string">"password"</span> /&gt;</div><div class="line">    &lt;s:radio key=<span class="string">"identity"</span> list=<span class="string">"%&#123;#&#123;'0':'Student','1':'Teacher','2':'Admin'&#125;&#125;"</span> value=<span class="string">"0"</span>/&gt;</div><div class="line">    &lt;s:submit value=<span class="string">"login"</span>/&gt;</div><div class="line">&lt;/s:form&gt;</div><div class="line">&lt;/body&gt;</div><div class="line">&lt;/html&gt;</div></pre></td></tr></table></figure>
+<p>在这个页面的第9行，我们可以看到有<code>action=&quot;Login&quot;</code>，这就表示该页面的参数全部由class:Login接收，该类会返回用户类型，由SampleProject.xml(之前用的默认文件名，应该改名叫Login.xml)接收，返回不同结果（由<code>&lt;result&gt;</code>标签注明）。  </p>
+<p>至此就实现了所有的登陆功能。  </p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+        
+  <div class="addthis addthis_toolbox addthis_default_style">
+    
+      <a class="addthis_button_facebook_like" fb:like:layout="button_count"></a>
+    
+    
+      <a class="addthis_button_tweet"></a>
+    
+    
+      <a class="addthis_button_google_plusone" g:plusone:size="medium"></a>
+    
+    
+      <a class="addthis_button_pinterest_pinit" pi:pinit:layout="horizontal"></a>
+    
+    <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js"></script>
+
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+<section id="comment">
+  <h1 class="title">Kommentare</h1>
+
+  
+      <div id="fb-root"></div>
+<script>
+  (function(d, s, id) {
+    var js, fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) return;
+    js = d.createElement(s); js.id = id;
+    js.src = "//connect.facebook.net/en_US/all.js#xfbml=1&appId=123456789012345";
+    fjs.parentNode.insertBefore(js, fjs);
+  }(document, 'script', 'facebook-jssdk'));
+</script>
+
+<div class="fb-comments" data-href="http://yoursite.com/2013/04/20/2013-04-20-school-management-system-outline/index.html" data-num-posts="5" data-width="840" data-colorscheme="light"></div>
+      
+  
+</section>
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="Suche">
+    <input type="hidden" name="q" value="site:yoursite.com">
+  </form>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">Kategorien</h3>
+  <ul class="entry">
+  
+    <li><a href="/categories/software-engineer/API/">API</a><small>1</small></li>
+  
+    <li><a href="/categories/Beijing/">Beijing</a><small>1</small></li>
+  
+    <li><a href="/categories/C语言学习笔记/">C语言学习笔记</a><small>1</small></li>
+  
+    <li><a href="/categories/leetcode/HashTable/">HashTable</a><small>1</small></li>
+  
+    <li><a href="/categories/source-code/JXIO/">JXIO</a><small>1</small></li>
+  
+    <li><a href="/categories/language/Japanese/">Japanese</a><small>2</small></li>
+  
+    <li><a href="/categories/paper/NLP/">NLP</a><small>1</small></li>
+  
+    <li><a href="/categories/Spark/RDD/">RDD</a><small>1</small></li>
+  
+    <li><a href="/categories/Security/">Security</a><small>1</small></li>
+  
+    <li><a href="/categories/Spark/">Spark</a><small>2</small></li>
+  
+    <li><a href="/categories/source-code/Spark/">Spark</a><small>5</small></li>
+  
+    <li><a href="/categories/leetcode/Two-Pointers/">Two Pointers</a><small>1</small></li>
+  
+    <li><a href="/categories/unity/UGUI/">UGUI</a><small>1</small></li>
+  
+    <li><a href="/categories/unity/animation/">animation</a><small>1</small></li>
+  
+    <li><a href="/categories/blog/">blog</a><small>3</small></li>
+  
+    <li><a href="/categories/coding/">coding</a><small>1</small></li>
+  
+    <li><a href="/categories/coding/compiler/">compiler</a><small>1</small></li>
+  
+    <li><a href="/categories/Spark/configuration/">configuration</a><small>1</small></li>
+  
+    <li><a href="/categories/leetcode/divide-and-conquer/">divide and conquer</a><small>1</small></li>
+  
+    <li><a href="/categories/dp/">dp</a><small>1</small></li>
+  
+    <li><a href="/categories/leetcode/dp/">dp</a><small>1</small></li>
+  
+    <li><a href="/categories/music/guitar/">guitar</a><small>1</small></li>
+  
+    <li><a href="/categories/language/">language</a><small>2</small></li>
+  
+    <li><a href="/categories/leetcode/">leetcode</a><small>9</small></li>
+  
+    <li><a href="/categories/language/Japanese/lyric/">lyric</a><small>1</small></li>
+  
+    <li><a href="/categories/mapreduce/">mapreduce</a><small>1</small></li>
+  
+    <li><a href="/categories/python/matplotlib/">matplotlib</a><small>1</small></li>
+  
+    <li><a href="/categories/music/">music</a><small>1</small></li>
+  
+    <li><a href="/categories/paper/">paper</a><small>2</small></li>
+  
+    <li><a href="/categories/programming-language/">programming language</a><small>1</small></li>
+  
+    <li><a href="/categories/python/">python</a><small>1</small></li>
+  
+    <li><a href="/categories/paper/scheduler/">scheduler</a><small>1</small></li>
+  
+    <li><a href="/categories/software-engineer/">software engineer</a><small>1</small></li>
+  
+    <li><a href="/categories/Spark/RDD/source-code/">source code</a><small>1</small></li>
+  
+    <li><a href="/categories/source-code/">source code</a><small>6</small></li>
+  
+    <li><a href="/categories/spark/">spark</a><small>2</small></li>
+  
+    <li><a href="/categories/unity/">unity</a><small>2</small></li>
+  
+  </ul>
+</div>
+
+
+  
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner">
+<div class="alignleft">
+  <script src="//dn-lbstatics.qbox.me/lbservice/busuanzi/2.0/busuanzi.mini.js"/></script>
+  <span id="busuanzi_container_site_uv">已经有<span id="busuanzi_value_site_uv"></span>人次访问carolz的小站啦 ( •̀ ω •́ )y</span>
+  <br /><br />
+  
+  &copy; 2017 6carol6
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>

@@ -1,0 +1,450 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Start from HadoopRDD | ShallWe Talk</title>
+  <meta name="author" content="6carol6">
+  
+  <meta name="description" content="我们在之前的文章中介绍过一些RDD的创建，然而并没有解释过各个RDD背后的细节，各个RDD是怎么被拆分到不同的Partition的？拆成几份？每份存在哪？这都是我们还没有解决的问题。本文将从HadoopRDD着手，追溯HadoopRDD的生成过程与实现细节，来看一看Spark中的数据分区是怎么回事。 
+HadoopRDD在应用程序中调用SparkContext的textFile，从而调用hadoopFile被创建。">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="Start from HadoopRDD"/>
+  <meta property="og:site_name" content="ShallWe Talk"/>
+
+  
+    <meta property="og:image" content=""/>
+  
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="ShallWe Talk" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">ShallWe Talk</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div>
+</header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2015-06-03T14:34:35.000Z"><a href="/2015/06/03/2015-06-03-start-from-hadooprdd/">2015-06-03</a></time>
+      
+      
+  
+    <h1 class="title">Start from HadoopRDD</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>我们在<a href="http://6carol6.github.io/blog/2015/04/17/rdd-in-spark/" target="_blank" rel="external">之前的文章</a>中介绍过一些RDD的创建，然而并没有解释过各个RDD背后的细节，各个RDD是怎么被拆分到不同的Partition的？拆成几份？每份存在哪？这都是我们还没有解决的问题。本文将从HadoopRDD着手，追溯HadoopRDD的生成过程与实现细节，来看一看Spark中的数据分区是怎么回事。 </p>
+<p>HadoopRDD在应用程序中调用SparkContext的textFile，从而调用hadoopFile被创建。  </p>
+<a id="more"></a>
+<p>textFile: Read a text file from HDFS, a local system(available on all nodes), ir any Hadoop-supported file system URI, and return it as an RDD of Strings.<br>hadoopFile: Get an RDD for a Hadoop file with an arbitrary InputFormat 不可以直接cache，需要先map，否则会创建很多副本。  </p>
+<p>先以ctx.textFile为例。</p>
+<pre><code>val lines = ctx.textFile(arg(0), 1)
+</code></pre><p>第一个参数是文件的位置，第二个参数是MinPartitions。  </p>
+<p>============================<strong>关于MinPartitions的讨论</strong>====================================  </p>
+<p>我们稍微看一下第二个参数。在SparkContext里有对第二个参数的默认值规定：  </p>
+<pre><code>def defaultMinPartitions: Int = math.min(defaultParallelism, 2)
+</code></pre><p>所以默认是划分成2份的。然后Parallelism也有默认规定。  </p>
+<pre><code>def defaultParallelism: Int = taskScheduler.defaultParallelism
+</code></pre><p>在TaskSchedulerImpl里有这样的定义：  </p>
+<pre><code>override def defaultParallelism() = backend.defaultParallelism()
+</code></pre><p>这里的backend是一个<code>SchedulerBackend</code>。在<code>TaskScheduler</code>初始化的时候传入，<code>SchedulerBackend</code>有两种类型，分别是local和cluster的。<code>LocalBackend</code>对应的是local的。cluster的又有<code>SparkDeploySchedulerBackend</code>和<code>CoarseGrainedSchedulerBackend</code>，还有给mesos用的<code>MesosSchedulerBackend</code>什么的，然后还有个不知道干什么用的<code>SimrSchedulerBackend</code>。一般我们开启Spark的Stand-alone模式，使用的都是<code>SparkDeploySchedulerBackend</code>。这里我们主要关注Standalone模式，所以看<code>SparkDeploySchedulerBackend</code>就好。  </p>
+<p>于是回到我们对parallelism的疑问，看一下<code>SparkDeploySchedulerBackend.defaultParallelism()</code>。然后发现这个backend继承自<code>CoarseGrainedSchedulerBackend</code>:   </p>
+<pre><code>override def defaultParallelism(): Int = {
+  conf.getInt(&quot;spark.default.parallelism&quot;, math.max(totalCoreCount.get(), 2))
+}
+</code></pre><p>意思就是说如果有设置就读设置啦，没有就选核数和2中较大的那个啦。通俗来说就是有几个核心就分几份。  </p>
+<p>=======================================<strong>讨论结束</strong>=========================================  </p>
+<p>让我们再回到<code>ctx.textFile(arg(0), 1)</code>  </p>
+<!--lang:scala-->
+<pre><code>/**
+ * Read a text file from HDFS, a local file system (available on all nodes), or any
+ * Hadoop-supported file system URI, and return it as an RDD of Strings.
+ */
+def textFile(path: String, minPartitions: Int = defaultMinPartitions): RDD[String] = {
+  hadoopFile(path, classOf[TextInputFormat], classOf[LongWritable], classOf[Text],
+    minPartitions).map(pair =&gt; pair._2.toString)
+}
+</code></pre><p>先生成一个HadoopRDD，然后再通过map操作生成一个MappedRDD，后者就不讲了，小贴一段代码：  </p>
+<!--lang:scala-->
+<pre><code>/**
+ * Return a new RDD by applying a function to all elements of this RDD.
+ */
+def map[U: ClassTag](f: T =&gt; U): RDD[U] = new MappedRDD(this, sc.clean(f))
+</code></pre><p>主要还是看刚才那个HadoopRDD。  </p>
+<!--lang:scala-->
+<pre><code>/** Get an RDD for a Hadoop file with an arbitrary InputFormat
+  *
+  * &apos;&apos;&apos;Note:&apos;&apos;&apos; Because Hadoop&apos;s RecordReader class re-uses the same Writable object for each
+  * record, directly caching the returned RDD will create many references to the same object.
+  * If you plan to directly cache Hadoop writable objects, you should first copy them using
+  * a `map` function.
+  * */
+def hadoopFile[K, V](
+    path: String,
+    inputFormatClass: Class[_ &lt;: InputFormat[K, V]],
+    keyClass: Class[K],
+    valueClass: Class[V],
+    minPartitions: Int = defaultMinPartitions
+    ): RDD[(K, V)] = {
+  // A Hadoop configuration can be about 10 KB, which is pretty big, so broadcast it.
+  val confBroadcast = broadcast(new SerializableWritable(hadoopConfiguration))
+  val setInputPathsFunc = (jobConf: JobConf) =&gt; FileInputFormat.setInputPaths(jobConf, path)
+  new HadoopRDD(
+    this,
+    confBroadcast,
+    Some(setInputPathsFunc),
+    inputFormatClass,
+    keyClass,
+    valueClass,
+    minPartitions)
+}
+</code></pre><p>首先看注释。这里提到了说在缓存HadoopRDD之前要进行map操作。所以<code>textFile</code>乖乖照做了。然后首先要广播Hadoop configuration。为什么呢？注释里说因为它的大小是10KB左右，相当大了，所以要broadcast。（什么鬼）总之就是先广播了一下。然后这个广播的返回值是要传给HadoopRDD的。（后面看一下有什么鬼用）  </p>
+<p>==================================<strong>插播一段广播</strong>==================================  </p>
+<!--lang:scala-->
+<pre><code>/**
+ * Broadcast a read-only variable to the cluster, returning a
+ * [[org.apache.spark.broadcast.Broadcast]] object for reading it in distributed functions.
+ * The variable will be sent to each cluster only once.
+ */
+def broadcast[T: ClassTag](value: T): Broadcast[T] = {
+  val bc = env.broadcastManager.newBroadcast[T](value, isLocal)
+  cleaner.foreach(_.registerBroadcastForCleanup(bc))
+  bc
+}
+</code></pre><p><strong>我们猜一下广播的意思应该是告诉每一个机器应该拿哪一部分数据？不是要从HDFS里取数据么。所以看下广播出去的数据是<code>hadoopConfiguration</code>。</strong>看一下这是什么鬼。  </p>
+<!--lang:scala-->
+<pre><code>/** A default Hadoop Configuration for the Hadoop code (e.g. file systems) that we reuse. */
+val hadoopConfiguration: Configuration = {
+  val env = SparkEnv.get
+  val hadoopConf = SparkHadoopUtil.get.newConfiguration()
+  // Explicitly check for S3 environment variables
+  if (System.getenv(&quot;AWS_ACCESS_KEY_ID&quot;) != null &amp;&amp;
+      System.getenv(&quot;AWS_SECRET_ACCESS_KEY&quot;) != null) {
+    hadoopConf.set(&quot;fs.s3.awsAccessKeyId&quot;, System.getenv(&quot;AWS_ACCESS_KEY_ID&quot;))
+    hadoopConf.set(&quot;fs.s3n.awsAccessKeyId&quot;, System.getenv(&quot;AWS_ACCESS_KEY_ID&quot;))
+    hadoopConf.set(&quot;fs.s3.awsSecretAccessKey&quot;, System.getenv(&quot;AWS_SECRET_ACCESS_KEY&quot;))
+    hadoopConf.set(&quot;fs.s3n.awsSecretAccessKey&quot;, System.getenv(&quot;AWS_SECRET_ACCESS_KEY&quot;))
+  }
+  // Copy any &quot;spark.hadoop.foo=bar&quot; system properties into conf as &quot;foo=bar&quot;
+  conf.getAll.foreach { case (key, value) =&gt;
+    if (key.startsWith(&quot;spark.hadoop.&quot;)) {
+      hadoopConf.set(key.substring(&quot;spark.hadoop.&quot;.length), value)
+    }
+  }
+  val bufferSize = conf.get(&quot;spark.buffer.size&quot;, &quot;65536&quot;)
+  hadoopConf.set(&quot;io.file.buffer.size&quot;, bufferSize)
+  hadoopConf
+}
+</code></pre><p><strong>好像跟我们猜得不太一样，所以我们的疑问再放一放。</strong>  </p>
+<p>==================================<strong>广播结束啦</strong>==================================  </p>
+<p>然后设置了一下文件位置就直接<code>new HadoopRDD</code>了。既然新建了一个RDD，那么做了什么事情呢？我们知道一个RDD有五个属性。  </p>
+<ul>
+<li>A list of partitions</li>
+<li>A function for computing each split</li>
+<li>A list of dependencies on other RDDs</li>
+<li>Optionally, a Partitioner for key-value RDDs (e.g. to say that the RDD is hash-partitioned)</li>
+<li>Optionally, a list f preferred locations to compute each split on (e.g. block locations for an HDFS file)</li>
+</ul>
+<p>首先看第一个属性partitions。Spark会为每个RDD准备一个<code>@transient private var partitions_ : Array[Partition] = null</code>当第一次调用<code>rdd.partitions(partitionId)</code>的时候，就会调用子类（例如HadoopRDD）override的getPartitions。  </p>
+<p>这里我们来看一下HadoopRDD的getPartitions:  </p>
+<!--lang:scala-->
+<pre><code>override def getPartitions: Array[Partition] = {
+  val jobConf = getJobConf() //这一句先放一放
+  // add the credentials here as this can be called before SparkContext initialized
+  SparkHadoopUtil.get.addCredentials(jobConf) //这句见上一个注释
+  val inputFormat = getInputFormat(jobConf)
+  if (inputFormat.isInstanceOf[Configurable]) {
+    inputFormat.asInstanceOf[Configurable].setConf(jobConf)
+  }
+  val inputSplits = inputFormat.getSplits(jobConf, minPartitions)  //看这里看这里
+  val array = new Array[Partition](inputSplits.size)
+  for (i &lt;- 0 until inputSplits.size) {
+    array(i) = new HadoopPartition(id, i, inputSplits(i)) //看这里看这里
+  }
+  array
+}
+</code></pre><p>首先要<code>getInputFormat</code>。<code>InputFormat</code>这个东西应该是来自Hadoop。课本上说它描述了MapReduce作业数据的输入形式和格式。我们接下来就看一下在Spark里，这东西是怎么用的。首先就是一些设置，我们先放着不看。然后从<code>inputFormat.getSplits</code>开始看。这个就是把输入拆成一个一个的split，每一个split作为一个task的输入。即task的数量是又InputSplit决定的。然后就新建了inputSplits.size个HadoopPartition（这个类定义在HadoopRDD.scala里）并作为Array返回。所以这货就是Partition最后所指的东西了。  </p>
+<pre><code>/**
+ * A Spark split class that wraps around a Hadoop InputSplit.
+ */
+private[spark] class HadoopPartition(rddId: Int, idx: Int, @transient s: InputSplit)
+  extends Partition {
+
+  val inputSplit = new SerializableWritable[InputSplit](s)
+
+  override def hashCode(): Int = 41 * (41 + rddId) + idx
+
+  override val index: Int = idx
+
+  /**
+   * Get any environment variables that should be added to the users environment when running pipes
+   * @return a Map with the environment variables and corresponding values, it could be empty
+   */
+  def getPipeEnvVars(): Map[String, String] = {
+    val envVars: Map[String, String] = if (inputSplit.value.isInstanceOf[FileSplit]) {
+      val is: FileSplit = inputSplit.value.asInstanceOf[FileSplit]
+      // map_input_file is deprecated in favor of mapreduce_map_input_file but set both
+      // since its not removed yet
+      Map(&quot;map_input_file&quot; -&gt; is.getPath().toString(),
+        &quot;mapreduce_map_input_file&quot; -&gt; is.getPath().toString())
+    } else {
+      Map()
+    }
+    envVars
+  }
+}
+</code></pre><p>然后看一下HadoopRDD的compute函数：  </p>
+<!--lang:scala-->
+<pre><code>override def compute(theSplit: Partition, context: TaskContext): InterruptibleIterator[(K, V)] = {
+  val iter = new NextIterator[(K, V)] {
+
+    val split = theSplit.asInstanceOf[HadoopPartition]
+    logInfo(&quot;Input split: &quot; + split.inputSplit)
+    var reader: RecordReader[K, V] = null
+    val jobConf = getJobConf()
+    val inputFormat = getInputFormat(jobConf)
+    HadoopRDD.addLocalConfiguration(new SimpleDateFormat(&quot;yyyyMMddHHmm&quot;).format(createTime),
+      context.stageId, theSplit.index, context.attemptId.toInt, jobConf)
+    reader = inputFormat.getRecordReader(split.inputSplit.value, jobConf, Reporter.NULL)
+
+    // Register an on-task-completion callback to close the input stream.
+    context.addOnCompleteCallback{ () =&gt; closeIfNeeded() }
+    val key: K = reader.createKey()
+    val value: V = reader.createValue()
+    override def getNext() = {
+      try {
+        finished = !reader.next(key, value)
+      } catch {
+        case eof: EOFException =&gt;
+          finished = true
+      }
+      (key, value)
+    }
+
+    override def close() {
+      try {
+        reader.close()
+      } catch {
+        case e: Exception =&gt; logWarning(&quot;Exception in RecordReader.close()&quot;, e)
+      }
+    }
+  }
+  new InterruptibleIterator[(K, V)](context, iter)
+}
+</code></pre><p>这个函数由两部分组成，一个是返回值<code>new InterruptibleIterator[(K, V)](context, iter)</code>，另一个是生成这个返回值iter参数的部分。我们先看一下这个iter是怎么回事。  </p>
+<p>=============================================<strong>关于iter</strong>====================================  </p>
+<p>iter是一个NextIterator类型，这个类型在spark.util.NextIterator中定义。这里进行了一些初始化和<code>getNext()</code>/<code>close()</code>函数的override。  </p>
+<p>首先把theSplit用asInstanceOf转换成HadoopPartition（要求theSplit的类型是HadoopPartition的子类）。去追一下这个split可以知道这是一个Partition，来自Task被创建时候传入的partitionId，然后使用rdd.partitions(partitionId)取出。还记得我们当初创建Task的时候从p = 0-&gt;stage.numPartitions创建的吗？然后我们把p传入了Task的参数。就是那个！这时候我们就要把partition根据partitionId也就是p取出了。  </p>
+<p>然后就可以通过这个iter.getNext()取出这个split中的(key, value)直到取完。  </p>
+<p>小结一下也就是说，有了iter，集群中的每个机器（准确说是每个内核）只要用iter.getNext()就可以取出HDFS中的<key, value="">了。  </key,></p>
+<p>===========================================<strong>iter讨论结束</strong>===================================  </p>
+<p>所以HadoopRDD的<code>compute()</code>就是提供了一个对HDFS中数据的迭代器。  </p>
+
+      
+    </div>
+    <footer>
+      
+        
+  
+  <div class="categories">
+    <a href="/categories/source-code/">source code</a>, <a href="/categories/source-code/Spark/">Spark</a>
+  </div>
+
+        
+        
+  <div class="addthis addthis_toolbox addthis_default_style">
+    
+      <a class="addthis_button_facebook_like" fb:like:layout="button_count"></a>
+    
+    
+      <a class="addthis_button_tweet"></a>
+    
+    
+      <a class="addthis_button_google_plusone" g:plusone:size="medium"></a>
+    
+    
+      <a class="addthis_button_pinterest_pinit" pi:pinit:layout="horizontal"></a>
+    
+    <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js"></script>
+
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+<section id="comment">
+  <h1 class="title">Kommentare</h1>
+
+  
+      <div id="fb-root"></div>
+<script>
+  (function(d, s, id) {
+    var js, fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) return;
+    js = d.createElement(s); js.id = id;
+    js.src = "//connect.facebook.net/en_US/all.js#xfbml=1&appId=123456789012345";
+    fjs.parentNode.insertBefore(js, fjs);
+  }(document, 'script', 'facebook-jssdk'));
+</script>
+
+<div class="fb-comments" data-href="http://yoursite.com/2015/06/03/2015-06-03-start-from-hadooprdd/index.html" data-num-posts="5" data-width="840" data-colorscheme="light"></div>
+      
+  
+</section>
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="Suche">
+    <input type="hidden" name="q" value="site:yoursite.com">
+  </form>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">Kategorien</h3>
+  <ul class="entry">
+  
+    <li><a href="/categories/software-engineer/API/">API</a><small>1</small></li>
+  
+    <li><a href="/categories/Beijing/">Beijing</a><small>1</small></li>
+  
+    <li><a href="/categories/C语言学习笔记/">C语言学习笔记</a><small>1</small></li>
+  
+    <li><a href="/categories/leetcode/HashTable/">HashTable</a><small>1</small></li>
+  
+    <li><a href="/categories/source-code/JXIO/">JXIO</a><small>1</small></li>
+  
+    <li><a href="/categories/language/Japanese/">Japanese</a><small>2</small></li>
+  
+    <li><a href="/categories/paper/NLP/">NLP</a><small>1</small></li>
+  
+    <li><a href="/categories/Spark/RDD/">RDD</a><small>1</small></li>
+  
+    <li><a href="/categories/Security/">Security</a><small>1</small></li>
+  
+    <li><a href="/categories/Spark/">Spark</a><small>2</small></li>
+  
+    <li><a href="/categories/source-code/Spark/">Spark</a><small>5</small></li>
+  
+    <li><a href="/categories/leetcode/Two-Pointers/">Two Pointers</a><small>1</small></li>
+  
+    <li><a href="/categories/unity/UGUI/">UGUI</a><small>1</small></li>
+  
+    <li><a href="/categories/unity/animation/">animation</a><small>1</small></li>
+  
+    <li><a href="/categories/blog/">blog</a><small>3</small></li>
+  
+    <li><a href="/categories/coding/">coding</a><small>1</small></li>
+  
+    <li><a href="/categories/coding/compiler/">compiler</a><small>1</small></li>
+  
+    <li><a href="/categories/Spark/configuration/">configuration</a><small>1</small></li>
+  
+    <li><a href="/categories/leetcode/divide-and-conquer/">divide and conquer</a><small>1</small></li>
+  
+    <li><a href="/categories/dp/">dp</a><small>1</small></li>
+  
+    <li><a href="/categories/leetcode/dp/">dp</a><small>1</small></li>
+  
+    <li><a href="/categories/music/guitar/">guitar</a><small>1</small></li>
+  
+    <li><a href="/categories/language/">language</a><small>2</small></li>
+  
+    <li><a href="/categories/leetcode/">leetcode</a><small>9</small></li>
+  
+    <li><a href="/categories/language/Japanese/lyric/">lyric</a><small>1</small></li>
+  
+    <li><a href="/categories/mapreduce/">mapreduce</a><small>1</small></li>
+  
+    <li><a href="/categories/python/matplotlib/">matplotlib</a><small>1</small></li>
+  
+    <li><a href="/categories/music/">music</a><small>1</small></li>
+  
+    <li><a href="/categories/paper/">paper</a><small>2</small></li>
+  
+    <li><a href="/categories/programming-language/">programming language</a><small>1</small></li>
+  
+    <li><a href="/categories/python/">python</a><small>1</small></li>
+  
+    <li><a href="/categories/paper/scheduler/">scheduler</a><small>1</small></li>
+  
+    <li><a href="/categories/software-engineer/">software engineer</a><small>1</small></li>
+  
+    <li><a href="/categories/Spark/RDD/source-code/">source code</a><small>1</small></li>
+  
+    <li><a href="/categories/source-code/">source code</a><small>6</small></li>
+  
+    <li><a href="/categories/spark/">spark</a><small>2</small></li>
+  
+    <li><a href="/categories/unity/">unity</a><small>2</small></li>
+  
+  </ul>
+</div>
+
+
+  
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner">
+<div class="alignleft">
+  <script src="//dn-lbstatics.qbox.me/lbservice/busuanzi/2.0/busuanzi.mini.js"/></script>
+  <span id="busuanzi_container_site_uv">已经有<span id="busuanzi_value_site_uv"></span>人次访问carolz的小站啦 ( •̀ ω •́ )y</span>
+  <br /><br />
+  
+  &copy; 2017 6carol6
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>

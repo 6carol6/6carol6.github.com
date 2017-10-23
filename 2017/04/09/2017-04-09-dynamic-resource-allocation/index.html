@@ -1,0 +1,277 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Dynamic Resource Allocation | ShallWe Talk</title>
+  <meta name="author" content="6carol6">
+  
+  <meta name="description" content="嘛，今天具体就从源码的角度介绍下这个  
+这货貌似在Spark1.2的时候就被引入了，居然现在才看真是惭愧啊。">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="Dynamic Resource Allocation"/>
+  <meta property="og:site_name" content="ShallWe Talk"/>
+
+  
+    <meta property="og:image" content=""/>
+  
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="ShallWe Talk" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">ShallWe Talk</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div>
+</header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2017-04-09T14:48:15.000Z"><a href="/2017/04/09/2017-04-09-dynamic-resource-allocation/">2017-04-09</a></time>
+      
+      
+  
+    <h1 class="title">Dynamic Resource Allocation</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>嘛，今天具体就从源码的角度介绍下<a href="http://spark.apache.org/docs/latest/job-scheduling.html#dynamic-resource-allocation" target="_blank" rel="external">这个</a>  </p>
+<p>这货貌似在Spark1.2的时候就被引入了，居然现在才看真是惭愧啊。  </p>
+<a id="more"></a>
+<h3 id="ExecutorAllocationManager-scala"><a href="#ExecutorAllocationManager-scala" class="headerlink" title="ExecutorAllocationManager.scala"></a>ExecutorAllocationManager.scala</h3><p>在<code>SparkContext</code>里会调用这个类的<code>start()</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div></pre></td><td class="code"><pre><div class="line">/**</div><div class="line">    * Register for scheduler callbacks to decide when to add and remove executors, and start</div><div class="line">    * the scheduling task.</div><div class="line">    */</div><div class="line">    def start(): Unit = &#123;</div><div class="line">        listenerBus.addListener(listener)</div><div class="line"></div><div class="line">        val scheduleTask = new Runnable() &#123;</div><div class="line">            override def run(): Unit = &#123;</div><div class="line">                try &#123;</div><div class="line">                    schedule()</div><div class="line">                &#125; catch &#123;</div><div class="line">                case ct: ControlThrowable =&gt;</div><div class="line">                    throw ct</div><div class="line">                case t: Throwable =&gt;</div><div class="line">                    logWarning(s&quot;Uncaught exception in thread $&#123;Thread.currentThread().getName&#125;&quot;, t)</div><div class="line">                &#125;</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">        executor.scheduleAtFixedRate(scheduleTask, 0, intervalMillis, TimeUnit.MILLISECONDS)</div><div class="line"></div><div class="line">        client.requestTotalExecutors(numExecutorsTarget, localityAwareTasks, hostToLocalTaskCount)</div><div class="line">    &#125;</div></pre></td></tr></table></figure>
+<p><code>schedule()</code>在这里</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div></pre></td><td class="code"><pre><div class="line">/**</div><div class="line">   * This is called at a fixed interval to regulate the number of pending executor requests</div><div class="line">   * and number of executors running.</div><div class="line">   *</div><div class="line">   * First, adjust our requested executors based on the add time and our current needs.</div><div class="line">   * Then, if the remove time for an existing executor has expired, kill the executor.</div><div class="line">   *</div><div class="line">   * This is factored out into its own method for testing.</div><div class="line">   */</div><div class="line">  private def schedule(): Unit = synchronized &#123;</div><div class="line">    val now = clock.getTimeMillis</div><div class="line"></div><div class="line">    updateAndSyncNumExecutorsTarget(now)</div><div class="line"></div><div class="line">    // 这里的removeTimes是一个HashMap[String, Long]（&lt;ExecutorId, expireTime&gt;）</div><div class="line">    // 超时未被占用，移除Executor</div><div class="line">    removeTimes.retain &#123; case (executorId, expireTime) =&gt;</div><div class="line">      val expired = now &gt;= expireTime</div><div class="line">      if (expired) &#123;</div><div class="line">        initializing = false</div><div class="line">        removeExecutor(executorId)</div><div class="line">      &#125;</div><div class="line">      !expired</div><div class="line">    &#125;</div><div class="line">  &#125;</div></pre></td></tr></table></figure>
+<p><code>updateAndSyncNumExecutorsTarget(now)</code>里调用<code>addExecutors()</code>，这里是每次翻倍申请Executor的地方。</p>
+<p>然后回到最上面的<code>start()</code>，有一个<code>Runnable()</code>什么时候<code>run()</code>呢，可以看到这个<code>Runnable()</code>被传入了<code>executor.scheduleAtFixedRate(scheduleTask, 0, intervalMillis, TimeUnit.MILLISECONDS)</code>。这里的<code>executor</code>的定义如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">// Executor that handles the scheduling task.</div><div class="line">private val executor =</div><div class="line">  ThreadUtils.newDaemonSingleThreadScheduledExecutor(&quot;spark-dynamic-executor-allocation&quot;)</div></pre></td></tr></table></figure>
+<blockquote>
+<h3 id="util-ThreadUtils-scala"><a href="#util-ThreadUtils-scala" class="headerlink" title="util/ThreadUtils.scala"></a>util/ThreadUtils.scala</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">&gt;   /**</div><div class="line">&gt;    * Wrapper over newSingleThreadExecutor.</div><div class="line">&gt;    */</div><div class="line">&gt;   def newDaemonSingleThreadExecutor(threadName: String): ExecutorService = &#123;</div><div class="line">&gt;     val threadFactory = new ThreadFactoryBuilder().setDaemon(true).setNameFormat(threadName).build()</div><div class="line">&gt;     Executors.newSingleThreadExecutor(threadFactory)</div><div class="line">&gt;   &#125;</div><div class="line">&gt;</div></pre></td></tr></table></figure>
+<p>这应该是一个工厂模式，返回了一个<code>ExecutorService</code>。所以<code>executor.scheduleAtFixedRate(scheduleTask, 0, intervalMillis, TimeUnit.MILLISECONDS)</code>应该可以被理解为每隔<code>intervalMillis</code>时间就被调用一下啦。</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">// Polling loop interval (ms)</div><div class="line">private val intervalMillis: Long = 100</div></pre></td></tr></table></figure>
+<p>这个时间间隔被定义为了100ms。</p>
+<p>我们现在知道了申请Executor的函数会每隔100ms被调用一次，那么这个函数做了什么呢？</p>
+<p>如果还有task在排队，并且还没有被调度，就要<code>addExecutors(maxNeeded)</code>，这里的<code>maxNeeded</code>取(task的总个数/每个task需要的Executor的个数)上取整。</p>
+<p>先看一些默认值表示什么意思，值是多少。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line">// Lower and upper bounds on the number of executors.</div><div class="line">//最小的Executor数量，默认为0</div><div class="line">private val minNumExecutors = conf.get(DYN_ALLOCATION_MIN_EXECUTORS) </div><div class="line">//最大的Executor数量，默认为Int.MaxValue</div><div class="line">private val maxNumExecutors = conf.get(DYN_ALLOCATION_MAX_EXECUTORS) </div><div class="line">//初始请求Executor数量，为max&#123;DYN_ALLOCATION_MIN_EXECUTORS，DYN_ALLOCATION_INITIAL_EXECUTORS(默认为DYN_ALLOCATION_MIN_EXECUTORS)，EXECUTOR_INSTANCES(默认为0)&#125;</div><div class="line">private val initialNumExecutors = Utils.getDynamicAllocationInitialExecutors(conf) </div><div class="line"></div><div class="line">// The desired number of executors at this moment in time. If all our executors were to die, this</div><div class="line">// is the number of executors we would immediately want from the cluster manager.</div><div class="line">private var numExecutorsTarget = initialNumExecutors</div><div class="line"></div><div class="line">// Number of executors to add in the next round</div><div class="line">private var numExecutorsToAdd = 1</div></pre></td></tr></table></figure>
+<blockquote>
+<h3 id="internal-package-scala"><a href="#internal-package-scala" class="headerlink" title="internal/package.scala"></a>internal/package.scala</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">&gt;   private[spark] val DYN_ALLOCATION_MIN_EXECUTORS =</div><div class="line">&gt;    ConfigBuilder(&quot;spark.dynamicAllocation.minExecutors&quot;).intConf.createWithDefault(0)</div><div class="line">&gt;   private[spark] val DYN_ALLOCATION_MAX_EXECUTORS =</div><div class="line">&gt;    ConfigBuilder(&quot;spark.dynamicAllocation.maxExecutors&quot;).intConf.createWithDefault(Int.MaxValue)</div><div class="line">&gt;   private[spark] val DYN_ALLOCATION_INITIAL_EXECUTORS =</div><div class="line">&gt;    ConfigBuilder(&quot;spark.dynamicAllocation.initialExecutors&quot;)</div><div class="line">&gt;      .fallbackConf(DYN_ALLOCATION_MIN_EXECUTORS)</div><div class="line">&gt;</div></pre></td></tr></table></figure>
+<h3 id="util-Utils-scala"><a href="#util-Utils-scala" class="headerlink" title="util/Utils.scala"></a>util/Utils.scala</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div></pre></td><td class="code"><pre><div class="line">&gt;   /**</div><div class="line">&gt;   * Return the initial number of executors for dynamic allocation.</div><div class="line">&gt;   */</div><div class="line">&gt;  def getDynamicAllocationInitialExecutors(conf: SparkConf): Int = &#123;</div><div class="line">&gt;    if (conf.get(DYN_ALLOCATION_INITIAL_EXECUTORS) &lt; conf.get(DYN_ALLOCATION_MIN_EXECUTORS)) &#123;</div><div class="line">&gt;      logWarning(s&quot;$&#123;DYN_ALLOCATION_INITIAL_EXECUTORS.key&#125; less than &quot; +</div><div class="line">&gt;        s&quot;$&#123;DYN_ALLOCATION_MIN_EXECUTORS.key&#125; is invalid, ignoring its setting, &quot; +</div><div class="line">&gt;          &quot;please update your configs.&quot;)</div><div class="line">&gt;    &#125;</div><div class="line">&gt;</div><div class="line">&gt;    if (conf.get(EXECUTOR_INSTANCES).getOrElse(0) &lt; conf.get(DYN_ALLOCATION_MIN_EXECUTORS)) &#123;</div><div class="line">&gt;      logWarning(s&quot;$&#123;EXECUTOR_INSTANCES.key&#125; less than &quot; +</div><div class="line">&gt;        s&quot;$&#123;DYN_ALLOCATION_MIN_EXECUTORS.key&#125; is invalid, ignoring its setting, &quot; +</div><div class="line">&gt;          &quot;please update your configs.&quot;)</div><div class="line">&gt;    &#125;</div><div class="line">&gt;</div><div class="line">&gt;    val initialExecutors = Seq(</div><div class="line">&gt;      conf.get(DYN_ALLOCATION_MIN_EXECUTORS),</div><div class="line">&gt;      conf.get(DYN_ALLOCATION_INITIAL_EXECUTORS),</div><div class="line">&gt;      conf.get(EXECUTOR_INSTANCES).getOrElse(0)).max</div><div class="line">&gt;</div><div class="line">&gt;    logInfo(s&quot;Using initial executors = $initialExecutors, max of &quot; +</div><div class="line">&gt;      s&quot;$&#123;DYN_ALLOCATION_INITIAL_EXECUTORS.key&#125;, $&#123;DYN_ALLOCATION_MIN_EXECUTORS.key&#125; and &quot; +</div><div class="line">&gt;        s&quot;$&#123;EXECUTOR_INSTANCES.key&#125;&quot;)</div><div class="line">&gt;    initialExecutors</div><div class="line">&gt;  &#125;</div><div class="line">&gt;</div></pre></td></tr></table></figure>
+</blockquote>
+<p>&gt;</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div></pre></td><td class="code"><pre><div class="line">/**</div><div class="line"> * Request a number of executors from the cluster manager.</div><div class="line"> * If the cap on the number of executors is reached, give up and reset the</div><div class="line"> * number of executors to add next round instead of continuing to double it.</div><div class="line"> *</div><div class="line"> * @param maxNumExecutorsNeeded the maximum number of executors all currently running or pending</div><div class="line"> *                              tasks could fill</div><div class="line"> * @return the number of additional executors actually requested.</div><div class="line"> */</div><div class="line">// 这里的参数maxNumExecutorNeeded = ceil(pending的task个数/每个task需要的Executor个数)</div><div class="line">private def addExecutors(maxNumExecutorsNeeded: Int): Int = &#123;</div><div class="line">  // Do not request more executors if it would put our target over the upper bound</div><div class="line">  if (numExecutorsTarget &gt;= maxNumExecutors) &#123;</div><div class="line">    logDebug(s&quot;Not adding executors because our current target total &quot; +</div><div class="line">      s&quot;is already $numExecutorsTarget (limit $maxNumExecutors)&quot;)</div><div class="line">    numExecutorsToAdd = 1</div><div class="line">    return 0</div><div class="line">  &#125;</div><div class="line"></div><div class="line">  val oldNumExecutorsTarget = numExecutorsTarget</div><div class="line">  // There&apos;s no point in wasting time ramping up to the number of executors we already have, so</div><div class="line">  // make sure our target is at least as much as our current allocation:</div><div class="line">  numExecutorsTarget = math.max(numExecutorsTarget, executorIds.size)</div><div class="line">  // Boost our target with the number to add for this round:</div><div class="line">  numExecutorsTarget += numExecutorsToAdd</div><div class="line">  // Ensure that our target doesn&apos;t exceed what we need at the present moment:</div><div class="line">  // 保证请求不会超过现在pending的task所需要的Executor的个数</div><div class="line">  numExecutorsTarget = math.min(numExecutorsTarget, maxNumExecutorsNeeded)</div><div class="line">  // Ensure that our target fits within configured bounds:</div><div class="line">  // 保证不会超过设置最大的个数，不会小于设置最小的个数</div><div class="line">  numExecutorsTarget = math.max(math.min(numExecutorsTarget, maxNumExecutors), minNumExecutors)</div><div class="line"></div><div class="line">  // 现在需要的和上一把需要的差值（这一把多加了numExecutorsToAdd），</div><div class="line">  // 也就是这一把需要多申请delta个Executor</div><div class="line">  val delta = numExecutorsTarget - oldNumExecutorsTarget</div><div class="line"></div><div class="line">  // If our target has not changed, do not send a message</div><div class="line">  // to the cluster manager and reset our exponential growth</div><div class="line">  if (delta == 0) &#123;</div><div class="line">    numExecutorsToAdd = 1</div><div class="line">    return 0</div><div class="line">  &#125;</div><div class="line"></div><div class="line">  // 这里的client是SparkContext.this</div><div class="line">  val addRequestAcknowledged = testing ||</div><div class="line">    client.requestTotalExecutors(numExecutorsTarget, localityAwareTasks, hostToLocalTaskCount)</div><div class="line">  if (addRequestAcknowledged) &#123;</div><div class="line">    val executorsString = &quot;executor&quot; + &#123; if (delta &gt; 1) &quot;s&quot; else &quot;&quot; &#125;</div><div class="line">    logInfo(s&quot;Requesting $delta new $executorsString because tasks are backlogged&quot; +</div><div class="line">      s&quot; (new desired total will be $numExecutorsTarget)&quot;)</div><div class="line">    numExecutorsToAdd = if (delta == numExecutorsToAdd) &#123;</div><div class="line">      numExecutorsToAdd * 2</div><div class="line">    &#125; else &#123;</div><div class="line">      1</div><div class="line">    &#125;</div><div class="line">    delta</div><div class="line">  &#125; else &#123;</div><div class="line">    logWarning(</div><div class="line">      s&quot;Unable to reach the cluster manager to request $numExecutorsTarget total executors!&quot;)</div><div class="line">    numExecutorsTarget = oldNumExecutorsTarget</div><div class="line">    0</div><div class="line">  &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<blockquote>
+<h3 id="SparkContext-scala"><a href="#SparkContext-scala" class="headerlink" title="SparkContext.scala"></a>SparkContext.scala</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div></pre></td><td class="code"><pre><div class="line">&gt;   /**</div><div class="line">&gt;   * Update the cluster manager on our scheduling needs. Three bits of information are included</div><div class="line">&gt;   * to help it make decisions.</div><div class="line">&gt;   * @param numExecutors The total number of executors we&apos;d like to have. The cluster manager</div><div class="line">&gt;   *                     shouldn&apos;t kill any running executor to reach this number, but,</div><div class="line">&gt;   *                     if all existing executors were to die, this is the number of executors</div><div class="line">&gt;   *                     we&apos;d want to be allocated.</div><div class="line">&gt;   * @param localityAwareTasks The number of tasks in all active stages that have a locality</div><div class="line">&gt;   *                           preferences. This includes running, pending, and completed tasks.</div><div class="line">&gt;   * @param hostToLocalTaskCount A map of hosts to the number of tasks from all active stages</div><div class="line">&gt;   *                             that would like to like to run on that host.</div><div class="line">&gt;   *                             This includes running, pending, and completed tasks.</div><div class="line">&gt;   * @return whether the request is acknowledged by the cluster manager.</div><div class="line">&gt;   */</div><div class="line">&gt;  private[spark] override def requestTotalExecutors(</div><div class="line">&gt;      numExecutors: Int,</div><div class="line">&gt;      localityAwareTasks: Int,</div><div class="line">&gt;      hostToLocalTaskCount: scala.collection.immutable.Map[String, Int]</div><div class="line">&gt;    ): Boolean = &#123;</div><div class="line">&gt;    schedulerBackend match &#123;</div><div class="line">&gt;      // 所以就是去调用CoarseGrainedSchedulerBackend.requestTotalExecutors</div><div class="line">&gt;      case b: CoarseGrainedSchedulerBackend =&gt;</div><div class="line">&gt;        b.requestTotalExecutors(numExecutors, localityAwareTasks, hostToLocalTaskCount)</div><div class="line">&gt;      case _ =&gt;</div><div class="line">&gt;        logWarning(&quot;Requesting executors is only supported in coarse-grained mode&quot;)</div><div class="line">&gt;        false</div><div class="line">&gt;    &#125;</div><div class="line">&gt;  &#125;</div><div class="line">&gt;</div></pre></td></tr></table></figure>
+</blockquote>
+<h3 id="scheduler-cluster-CoarseGrainedSchedulerBackend-scala"><a href="#scheduler-cluster-CoarseGrainedSchedulerBackend-scala" class="headerlink" title="scheduler/cluster/CoarseGrainedSchedulerBackend.scala"></a>scheduler/cluster/CoarseGrainedSchedulerBackend.scala</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line">final override def requestTotalExecutors(</div><div class="line">    numExecutors: Int,  // 表示当前一共要多少Executor（包括已经申请的吧）</div><div class="line">    localityAwareTasks: Int,</div><div class="line">    hostToLocalTaskCount: Map[String, Int]</div><div class="line">  ): Boolean = synchronized &#123;</div><div class="line">  if (numExecutors &lt; 0) &#123;</div><div class="line">    throw new IllegalArgumentException(</div><div class="line">      &quot;Attempted to request a negative number of executor(s) &quot; +</div><div class="line">        s&quot;$numExecutors from the cluster manager. Please specify a positive number!&quot;)</div><div class="line">  &#125;</div><div class="line"></div><div class="line">  this.localityAwareTasks = localityAwareTasks</div><div class="line">  this.hostToLocalTaskCount = hostToLocalTaskCount</div><div class="line"></div><div class="line">  numPendingExecutors =</div><div class="line">    math.max(numExecutors - numExistingExecutors + executorsPendingToRemove.size, 0)</div><div class="line">  // 调用子类函数</div><div class="line">  doRequestTotalExecutors(numExecutors)</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="scheduler-cluster-mesos-MesosCoarseGrainedSchedulerBackend-scala"><a href="#scheduler-cluster-mesos-MesosCoarseGrainedSchedulerBackend-scala" class="headerlink" title="scheduler/cluster/mesos/MesosCoarseGrainedSchedulerBackend.scala"></a>scheduler/cluster/mesos/MesosCoarseGrainedSchedulerBackend.scala</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">override def doRequestTotalExecutors(requestedTotal: Int): Boolean = &#123;</div><div class="line">  // We don&apos;t truly know if we can fulfill the full amount of executors</div><div class="line">  // since at coarse grain it depends on the amount of slaves available.</div><div class="line">  logInfo(&quot;Capping the total amount of executors to &quot; + requestedTotal)</div><div class="line">  executorLimitOption = Some(requestedTotal)</div><div class="line">  true</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>所以这整个过程就是在更新<code>executorLimitOption</code>，等到mesos主动offer资源的时候，可以用到这个值来判断offer的资源够不够用。  </p>
+<p>其他的内容就要看Mesos的resourceOffer了，就不属于这篇文章的介绍范围啦。再见！  </p>
+
+      
+    </div>
+    <footer>
+      
+        
+  
+  <div class="categories">
+    <a href="/categories/source-code/">source code</a>, <a href="/categories/source-code/Spark/">Spark</a>
+  </div>
+
+        
+        
+  <div class="addthis addthis_toolbox addthis_default_style">
+    
+      <a class="addthis_button_facebook_like" fb:like:layout="button_count"></a>
+    
+    
+      <a class="addthis_button_tweet"></a>
+    
+    
+      <a class="addthis_button_google_plusone" g:plusone:size="medium"></a>
+    
+    
+      <a class="addthis_button_pinterest_pinit" pi:pinit:layout="horizontal"></a>
+    
+    <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js"></script>
+
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+<section id="comment">
+  <h1 class="title">Kommentare</h1>
+
+  
+      <div id="fb-root"></div>
+<script>
+  (function(d, s, id) {
+    var js, fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) return;
+    js = d.createElement(s); js.id = id;
+    js.src = "//connect.facebook.net/en_US/all.js#xfbml=1&appId=123456789012345";
+    fjs.parentNode.insertBefore(js, fjs);
+  }(document, 'script', 'facebook-jssdk'));
+</script>
+
+<div class="fb-comments" data-href="http://yoursite.com/2017/04/09/2017-04-09-dynamic-resource-allocation/index.html" data-num-posts="5" data-width="840" data-colorscheme="light"></div>
+      
+  
+</section>
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="Suche">
+    <input type="hidden" name="q" value="site:yoursite.com">
+  </form>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">Kategorien</h3>
+  <ul class="entry">
+  
+    <li><a href="/categories/software-engineer/API/">API</a><small>1</small></li>
+  
+    <li><a href="/categories/Beijing/">Beijing</a><small>1</small></li>
+  
+    <li><a href="/categories/C语言学习笔记/">C语言学习笔记</a><small>1</small></li>
+  
+    <li><a href="/categories/leetcode/HashTable/">HashTable</a><small>1</small></li>
+  
+    <li><a href="/categories/source-code/JXIO/">JXIO</a><small>1</small></li>
+  
+    <li><a href="/categories/language/Japanese/">Japanese</a><small>2</small></li>
+  
+    <li><a href="/categories/paper/NLP/">NLP</a><small>1</small></li>
+  
+    <li><a href="/categories/Spark/RDD/">RDD</a><small>1</small></li>
+  
+    <li><a href="/categories/Security/">Security</a><small>1</small></li>
+  
+    <li><a href="/categories/Spark/">Spark</a><small>2</small></li>
+  
+    <li><a href="/categories/source-code/Spark/">Spark</a><small>5</small></li>
+  
+    <li><a href="/categories/leetcode/Two-Pointers/">Two Pointers</a><small>1</small></li>
+  
+    <li><a href="/categories/unity/UGUI/">UGUI</a><small>1</small></li>
+  
+    <li><a href="/categories/unity/animation/">animation</a><small>1</small></li>
+  
+    <li><a href="/categories/blog/">blog</a><small>3</small></li>
+  
+    <li><a href="/categories/coding/">coding</a><small>1</small></li>
+  
+    <li><a href="/categories/coding/compiler/">compiler</a><small>1</small></li>
+  
+    <li><a href="/categories/Spark/configuration/">configuration</a><small>1</small></li>
+  
+    <li><a href="/categories/leetcode/divide-and-conquer/">divide and conquer</a><small>1</small></li>
+  
+    <li><a href="/categories/dp/">dp</a><small>1</small></li>
+  
+    <li><a href="/categories/leetcode/dp/">dp</a><small>1</small></li>
+  
+    <li><a href="/categories/music/guitar/">guitar</a><small>1</small></li>
+  
+    <li><a href="/categories/language/">language</a><small>2</small></li>
+  
+    <li><a href="/categories/leetcode/">leetcode</a><small>9</small></li>
+  
+    <li><a href="/categories/language/Japanese/lyric/">lyric</a><small>1</small></li>
+  
+    <li><a href="/categories/mapreduce/">mapreduce</a><small>1</small></li>
+  
+    <li><a href="/categories/python/matplotlib/">matplotlib</a><small>1</small></li>
+  
+    <li><a href="/categories/music/">music</a><small>1</small></li>
+  
+    <li><a href="/categories/paper/">paper</a><small>2</small></li>
+  
+    <li><a href="/categories/programming-language/">programming language</a><small>1</small></li>
+  
+    <li><a href="/categories/python/">python</a><small>1</small></li>
+  
+    <li><a href="/categories/paper/scheduler/">scheduler</a><small>1</small></li>
+  
+    <li><a href="/categories/software-engineer/">software engineer</a><small>1</small></li>
+  
+    <li><a href="/categories/Spark/RDD/source-code/">source code</a><small>1</small></li>
+  
+    <li><a href="/categories/source-code/">source code</a><small>6</small></li>
+  
+    <li><a href="/categories/spark/">spark</a><small>2</small></li>
+  
+    <li><a href="/categories/unity/">unity</a><small>2</small></li>
+  
+  </ul>
+</div>
+
+
+  
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner">
+<div class="alignleft">
+  <script src="//dn-lbstatics.qbox.me/lbservice/busuanzi/2.0/busuanzi.mini.js"/></script>
+  <span id="busuanzi_container_site_uv">已经有<span id="busuanzi_value_site_uv"></span>人次访问carolz的小站啦 ( •̀ ω •́ )y</span>
+  <br /><br />
+  
+  &copy; 2017 6carol6
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>

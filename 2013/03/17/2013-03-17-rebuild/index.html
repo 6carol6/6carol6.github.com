@@ -1,0 +1,267 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Blog改造全记录 | ShallWe Talk</title>
+  <meta name="author" content="6carol6">
+  
+  <meta name="description" content="希望记下所有改造这里的记录。
+####添加评论这里启用了disqus添加评论功能。
+申请个disqus的帐号，然后修改_config.yml文件如下：
+disqus_short_name: your_disqus_short_name
+disqus_show_comment_count: true
+就可以啦~">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="Blog改造全记录"/>
+  <meta property="og:site_name" content="ShallWe Talk"/>
+
+  
+    <meta property="og:image" content=""/>
+  
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="ShallWe Talk" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">ShallWe Talk</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div>
+</header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2013-03-17T14:18:00.000Z"><a href="/2013/03/17/2013-03-17-rebuild/">2013-03-17</a></time>
+      
+      
+  
+    <h1 class="title">Blog改造全记录</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>希望记下所有改造<a href="/">这里</a>的记录。</p>
+<p>####添加评论<br>这里启用了<a href="http://disqus.com/" target="_blank" rel="external">disqus</a>添加评论功能。</p>
+<p>申请个<em>disqus</em>的帐号，然后修改_config.yml文件如下：</p>
+<pre><code>disqus_short_name: your_disqus_short_name
+disqus_show_comment_count: true
+</code></pre><p>就可以啦~<br><a id="more"></a></p>
+<p>####更改颜色布局<br>之前总是改不成功，才发现是忘了重新rake install的缘故。<br>在美好的<a href="http://zespia.tw/blog/2012/01/25/slash-theme/" target="_blank" rel="external">slash</a>主题的基础上，开始了修改之路。<br>由于是在主题的基础上更改，修改文件主要是/.themes/slash/sass/custom下的文件。在这个目录下修改或是新建文件，都会覆盖掉之前的主题。<br>修改完了之后不要忘记</p>
+<pre><code>rake install[&apos;slash&apos;]
+rake generate
+</code></pre><p>Good Luck~  </p>
+<p>####2013-7-17<br>今天重新折腾了下主题，用了与之前同一作者的<a href="https://github.com/tommy351/octopress-theme-phase" target="_blank" rel="external">phase</a>。发现背景图片是用js写的，实在是太geek了！果断改改颜色用起来。  </p>
+<p>####2013-7-19<br>1 添加了分享，这里使用了<a href="http://www.jiathis.com/" target="_blank" rel="external">加网</a>的分享功能，具体做法如下：  </p>
+<pre><code>打开source/_includes/post/sharing.html
+用&lt;!–和–&gt;注释掉&lt;div class=”share” &gt;和&lt;/div&gt;中的AddThis相关语句。
+然后在&lt;/div&gt;前加入从加网获得的代码。
+</code></pre><p>2 把评论用的<a href="http://disqus.com" target="_blank" rel="external">disqus</a>改成了社会主义的<a href="http://duoshuo.com/" target="_blank" rel="external">多说</a>。网上有一些这个的教程，不过试来试去都不成功，于是自己动手丰衣足食啦。<br>  因为之前的<a href="http://disqus.com/" target="_blank" rel="external">disqus</a>是Octopress自带的，于是想到可以找找相关代码写在哪里，然后替换成多说的代码。<br>  注意到source/_includes/post/comment.html里有一段disqus的代码。<br>  看这个意思很像是在说要评论的时候加上disqus_thread的意思。所以我们仿照一下，在这段话的后面加上多说的代码，具体内容参考<a href="http://xuhehuan.com/886.html" target="_blank" rel="external">这篇文章</a>。<br>  然后在post文件夹下新建一个duoshuo.html，把从多说获得的代码粘进去就行了。<br>  最后不要忘了配置_config.yml文件，在最后加上</p>
+<pre><code># Duoshuo Comments
+duoshuo_show_comment_count: true
+</code></pre><p>3 接下来是访问统计。这里使用了<a href="http://www.clustrmaps.com/zh/index.htm" target="_blank" rel="external">ClustrMaps</a>。找到想放的位置放上去就好了。这里选择了footer的位置，找到source/_includes/footer.html把从ClustrMaps获得的代码直接粘上去就行啦。</p>
+
+      
+    </div>
+    <footer>
+      
+        
+  
+  <div class="categories">
+    <a href="/categories/blog/">blog</a>
+  </div>
+
+        
+        
+  <div class="addthis addthis_toolbox addthis_default_style">
+    
+      <a class="addthis_button_facebook_like" fb:like:layout="button_count"></a>
+    
+    
+      <a class="addthis_button_tweet"></a>
+    
+    
+      <a class="addthis_button_google_plusone" g:plusone:size="medium"></a>
+    
+    
+      <a class="addthis_button_pinterest_pinit" pi:pinit:layout="horizontal"></a>
+    
+    <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js"></script>
+
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+<section id="comment">
+  <h1 class="title">Kommentare</h1>
+
+  
+      <div id="fb-root"></div>
+<script>
+  (function(d, s, id) {
+    var js, fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) return;
+    js = d.createElement(s); js.id = id;
+    js.src = "//connect.facebook.net/en_US/all.js#xfbml=1&appId=123456789012345";
+    fjs.parentNode.insertBefore(js, fjs);
+  }(document, 'script', 'facebook-jssdk'));
+</script>
+
+<div class="fb-comments" data-href="http://yoursite.com/2013/03/17/2013-03-17-rebuild/index.html" data-num-posts="5" data-width="840" data-colorscheme="light"></div>
+      
+  
+</section>
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="Suche">
+    <input type="hidden" name="q" value="site:yoursite.com">
+  </form>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">Kategorien</h3>
+  <ul class="entry">
+  
+    <li><a href="/categories/software-engineer/API/">API</a><small>1</small></li>
+  
+    <li><a href="/categories/Beijing/">Beijing</a><small>1</small></li>
+  
+    <li><a href="/categories/C语言学习笔记/">C语言学习笔记</a><small>1</small></li>
+  
+    <li><a href="/categories/leetcode/HashTable/">HashTable</a><small>1</small></li>
+  
+    <li><a href="/categories/source-code/JXIO/">JXIO</a><small>1</small></li>
+  
+    <li><a href="/categories/language/Japanese/">Japanese</a><small>2</small></li>
+  
+    <li><a href="/categories/paper/NLP/">NLP</a><small>1</small></li>
+  
+    <li><a href="/categories/Spark/RDD/">RDD</a><small>1</small></li>
+  
+    <li><a href="/categories/Security/">Security</a><small>1</small></li>
+  
+    <li><a href="/categories/Spark/">Spark</a><small>2</small></li>
+  
+    <li><a href="/categories/source-code/Spark/">Spark</a><small>5</small></li>
+  
+    <li><a href="/categories/leetcode/Two-Pointers/">Two Pointers</a><small>1</small></li>
+  
+    <li><a href="/categories/unity/UGUI/">UGUI</a><small>1</small></li>
+  
+    <li><a href="/categories/unity/animation/">animation</a><small>1</small></li>
+  
+    <li><a href="/categories/blog/">blog</a><small>3</small></li>
+  
+    <li><a href="/categories/coding/">coding</a><small>1</small></li>
+  
+    <li><a href="/categories/coding/compiler/">compiler</a><small>1</small></li>
+  
+    <li><a href="/categories/Spark/configuration/">configuration</a><small>1</small></li>
+  
+    <li><a href="/categories/leetcode/divide-and-conquer/">divide and conquer</a><small>1</small></li>
+  
+    <li><a href="/categories/dp/">dp</a><small>1</small></li>
+  
+    <li><a href="/categories/leetcode/dp/">dp</a><small>1</small></li>
+  
+    <li><a href="/categories/music/guitar/">guitar</a><small>1</small></li>
+  
+    <li><a href="/categories/language/">language</a><small>2</small></li>
+  
+    <li><a href="/categories/leetcode/">leetcode</a><small>9</small></li>
+  
+    <li><a href="/categories/language/Japanese/lyric/">lyric</a><small>1</small></li>
+  
+    <li><a href="/categories/mapreduce/">mapreduce</a><small>1</small></li>
+  
+    <li><a href="/categories/python/matplotlib/">matplotlib</a><small>1</small></li>
+  
+    <li><a href="/categories/music/">music</a><small>1</small></li>
+  
+    <li><a href="/categories/paper/">paper</a><small>2</small></li>
+  
+    <li><a href="/categories/programming-language/">programming language</a><small>1</small></li>
+  
+    <li><a href="/categories/python/">python</a><small>1</small></li>
+  
+    <li><a href="/categories/paper/scheduler/">scheduler</a><small>1</small></li>
+  
+    <li><a href="/categories/software-engineer/">software engineer</a><small>1</small></li>
+  
+    <li><a href="/categories/Spark/RDD/source-code/">source code</a><small>1</small></li>
+  
+    <li><a href="/categories/source-code/">source code</a><small>6</small></li>
+  
+    <li><a href="/categories/spark/">spark</a><small>2</small></li>
+  
+    <li><a href="/categories/unity/">unity</a><small>2</small></li>
+  
+  </ul>
+</div>
+
+
+  
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner">
+<div class="alignleft">
+  <script src="//dn-lbstatics.qbox.me/lbservice/busuanzi/2.0/busuanzi.mini.js"/></script>
+  <span id="busuanzi_container_site_uv">已经有<span id="busuanzi_value_site_uv"></span>人次访问carolz的小站啦 ( •̀ ω •́ )y</span>
+  <br /><br />
+  
+  &copy; 2017 6carol6
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>

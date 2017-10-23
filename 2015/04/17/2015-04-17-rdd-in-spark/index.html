@@ -1,0 +1,305 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>RDDs in Spark | ShallWe Talk</title>
+  <meta name="author" content="6carol6">
+  
+  <meta name="description" content="Berkeley曾经发过一篇文章专门解释过RDD是什么。在Spark的源码中也有大段注释解释了什么是RDD。它是一个数据的抽象加上附在它身上的一些操作。以下截取一段RDD.scala中的注释：  
+Internally, each RDD is characterized by five main properties:  
+
+A list of partitions
+A function for computing each split
+A list of dependencies on other RDDs
+Optionally, a Partitioner for key-value RDDs (e.g. to say that the RDD is hash-partitioned)
+Optionally, a list f preferred locations to compute each split on (e.g. block locations for an HDFS file)  
+
+本文主要列举各种RDD以及它们的生成方式。">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="RDDs in Spark"/>
+  <meta property="og:site_name" content="ShallWe Talk"/>
+
+  
+    <meta property="og:image" content=""/>
+  
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="ShallWe Talk" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">ShallWe Talk</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div>
+</header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2015-04-17T11:20:30.000Z"><a href="/2015/04/17/2015-04-17-rdd-in-spark/">2015-04-17</a></time>
+      
+      
+  
+    <h1 class="title">RDDs in Spark</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>Berkeley曾经发过一篇<a href="http://www.cs.berkeley.edu/~matei/papers/2012/nsdi_spark.pdf" target="_blank" rel="external">文章</a>专门解释过RDD是什么。在Spark的源码中也有大段注释解释了什么是RDD。它是一个数据的抽象加上附在它身上的一些操作。以下截取一段RDD.scala中的注释：  </p>
+<p>Internally, each RDD is characterized by five main properties:  </p>
+<ul>
+<li>A list of partitions</li>
+<li>A function for computing each split</li>
+<li>A list of dependencies on other RDDs</li>
+<li>Optionally, a Partitioner for key-value RDDs (e.g. to say that the RDD is hash-partitioned)</li>
+<li>Optionally, a list f preferred locations to compute each split on (e.g. block locations for an HDFS file)  </li>
+</ul>
+<p>本文主要列举各种RDD以及它们的生成方式。  </p>
+<a id="more"></a>
+<p>###AsyncRDDActions</p>
+<p>###BlockRDD</p>
+<p>###CartesianRDD</p>
+<p>###CheckpointRDD</p>
+<p>###CoalescedRDD</p>
+<p></p><h3><a name="CoGroupedRDD">CoGroupedRDD</a></h3><br>A RDD that cogroups its parents. For each key k in parent RDDs, the resulting RDD contains a tuple with the list of values for that key.  <p></p>
+<p>###DoubleRDDFunction</p>
+<p>###EmptyRDD</p>
+<p>###FilteredRDD</p>
+<p>###FlatMappedRDD</p>
+<p>###FlatMappedValuesRDD</p>
+<p>###GlommedRDD</p>
+<p>###HadoopRDD<br>在应用程序中调用SparkContext的textFile，从而调用hadoopFile被创建。<br><strong>textFile</strong>: Read a text file from HDFS, a local system(available on all nodes), ir any Hadoop-supported file system URI, and return it as an RDD of Strings.<br><strong>hadoopFile</strong>: Get an RDD for a Hadoop file with an arbitrary InputFormat 不可以直接cache，需要先map，否则会创建很多副本。<br><figure class="highlight scala"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">val</span> lines = ctx.textFile(arg(<span class="number">0</span>), <span class="number">1</span>)</div></pre></td></tr></table></figure></p>
+<p>###JdbcRDD</p>
+<p>###MapPartitionsRDD</p>
+<p></p><h3><a name="MappedRDD">MappedRDD</a></h3><br>在通用RDD.map的时候被创建<p></p>
+<p><strong>map</strong>: Return a new RDD by applying a function to all elements of this RDD.  </p>
+<p></p><h3><a name="MappedValuesRDD">MappedValuesRDD</a></h3><br>从<a href="#PairRDDFunctions">PairRDDFunctions</a>的mapValues创建。<p></p>
+<p>###NewHadoopRDD</p>
+<p>###OrderedRDDFunctions</p>
+<p></p><h3><a name="PairRDDFunctions">PairRDDFunctions</a></h3><br>Extra functions available on RDDs of (key, value) pairs through an implicit conversion.<br>Import ‘org.apache.spark.SparkContext._’ at the top of your program to use these functions.  <p></p>
+<p>所有<key, value="">式样的RDD都可以是这个类型（隐式转换过来的），可以使用这里面的所有方法。其中包括了大部分的涉及shuffle的RDD转换。<br><strong>combineByKey</strong>:<br><strong>foldByKey</strong>:<br><strong>reduceByKey</strong>:<br><strong>groupByKey</strong>  </key,></p>
+<p><strong>join</strong>: Return an RDD containing all pairs of elements with matching keys in ‘this’ and ‘other’. Each pair of elements will be returned as a (k, (v1, v2)) tuple, where (k, v1) is in ‘this’ and (k, v2) is in ‘other’. Uses the given Partitioner to partition the output RDD.<br>该函数调用this.cogroup.flatMapValues  </p>
+<p><strong>cogroup</strong>: For each key k in ‘this’ or ‘other’, return a resulting RDD that contains a tuple with the list of values for that key in ‘this’ as well as ‘other’<br>该函数生成一个<a href="#CoGroupedRDD">CoGroupedRDD</a><br>然后该函数会调用cg.mapValues(cg是一个<a href="#CoGroupedRDD">CoGroupedRDD</a>)  </p>
+<p><strong>subtractByKey</strong>  </p>
+<p><strong>mapValues</strong>: Pass each value in the key-value pair RDD through a map function without changing the keys; this also retains the original RDD’s partitioning.<br>这个函数会生成一个<a href="#MappedValuesRDD">MappedValuesRDD</a><br><figure class="highlight scala"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">val</span> links = lines.map&#123; s=&gt;</div><div class="line">	<span class="keyword">val</span> parts = s.split(<span class="string">"\\s+"</span>)</div><div class="line">	(parts(<span class="number">0</span>), parts(<span class="number">1</span>))</div><div class="line">&#125;.distinct().groupByKey().cache() <span class="comment">//RDD可以随意用PairRDDFunctions</span></div><div class="line"><span class="keyword">var</span> ranks = links.mapValues(v =&gt; <span class="number">1.0</span>) <span class="comment">//生成一个MappedValuesRDD</span></div></pre></td></tr></table></figure></p>
+<p>###ParallelCollectionRDD<br>在SparkContext中使用parallelize或者makeRDD创建<br><strong>parallelize</strong>: Distribute a local Scala collection to form an RDD<br><strong>makeRDD</strong>: Distribute a local Scala collection to form an RDD, with one or more location preferences(hostnames of Spark nodes) for each object. Create a new partition for each collection item.  </p>
+<p><em>SparkPi</em>: 用Monte Carlo method求pi<br><figure class="highlight scala"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">val</span> count= spark.parallelize(<span class="number">1</span> to n, slices).map&#123; i =&gt; <span class="comment">//RDD通用的map</span></div><div class="line">	<span class="keyword">val</span> x = random * <span class="number">2</span> <span class="number">-1</span></div><div class="line">	<span class="keyword">val</span> y = random *<span class="number">2</span> - <span class="number">1</span></div><div class="line">	<span class="keyword">if</span>(x*x+y*y &lt; <span class="number">1</span>) <span class="number">1</span> <span class="keyword">else</span> <span class="number">0</span></div><div class="line">&#125;.reduce(_+_)<span class="comment">//RDD通用的reduce</span></div></pre></td></tr></table></figure></p>
+<p>其中map/reduce均为通用RDD定义的函数。前者生成一个<a href="#MappedRDD">MappedRDD</a>。</p>
+<p>###PartitionerAwareUnionRDD</p>
+<p>###PartitionPruningRDD</p>
+<p>###PartitionwiseSampledRDD</p>
+<p>###PipedRDD</p>
+<p>###RDDCheckpointData</p>
+<p>###SampledRDD</p>
+<p>###SequenceFileRDDFunctions</p>
+<p>###ShuffledRDD</p>
+<p>###SubtractedRDD</p>
+<p>###UnionRDD</p>
+<p>###ZippedPartitionsRDD</p>
+<p>###ZippedRDD</p>
+<p>###ZippedWithIndexRDD</p>
+
+      
+    </div>
+    <footer>
+      
+        
+  
+  <div class="categories">
+    <a href="/categories/Spark/">Spark</a>, <a href="/categories/Spark/RDD/">RDD</a>, <a href="/categories/Spark/RDD/source-code/">source code</a>
+  </div>
+
+        
+        
+  <div class="addthis addthis_toolbox addthis_default_style">
+    
+      <a class="addthis_button_facebook_like" fb:like:layout="button_count"></a>
+    
+    
+      <a class="addthis_button_tweet"></a>
+    
+    
+      <a class="addthis_button_google_plusone" g:plusone:size="medium"></a>
+    
+    
+      <a class="addthis_button_pinterest_pinit" pi:pinit:layout="horizontal"></a>
+    
+    <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js"></script>
+
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+<section id="comment">
+  <h1 class="title">Kommentare</h1>
+
+  
+      <div id="fb-root"></div>
+<script>
+  (function(d, s, id) {
+    var js, fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) return;
+    js = d.createElement(s); js.id = id;
+    js.src = "//connect.facebook.net/en_US/all.js#xfbml=1&appId=123456789012345";
+    fjs.parentNode.insertBefore(js, fjs);
+  }(document, 'script', 'facebook-jssdk'));
+</script>
+
+<div class="fb-comments" data-href="http://yoursite.com/2015/04/17/2015-04-17-rdd-in-spark/index.html" data-num-posts="5" data-width="840" data-colorscheme="light"></div>
+      
+  
+</section>
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="Suche">
+    <input type="hidden" name="q" value="site:yoursite.com">
+  </form>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">Kategorien</h3>
+  <ul class="entry">
+  
+    <li><a href="/categories/software-engineer/API/">API</a><small>1</small></li>
+  
+    <li><a href="/categories/Beijing/">Beijing</a><small>1</small></li>
+  
+    <li><a href="/categories/C语言学习笔记/">C语言学习笔记</a><small>1</small></li>
+  
+    <li><a href="/categories/leetcode/HashTable/">HashTable</a><small>1</small></li>
+  
+    <li><a href="/categories/source-code/JXIO/">JXIO</a><small>1</small></li>
+  
+    <li><a href="/categories/language/Japanese/">Japanese</a><small>2</small></li>
+  
+    <li><a href="/categories/paper/NLP/">NLP</a><small>1</small></li>
+  
+    <li><a href="/categories/Spark/RDD/">RDD</a><small>1</small></li>
+  
+    <li><a href="/categories/Security/">Security</a><small>1</small></li>
+  
+    <li><a href="/categories/Spark/">Spark</a><small>2</small></li>
+  
+    <li><a href="/categories/source-code/Spark/">Spark</a><small>5</small></li>
+  
+    <li><a href="/categories/leetcode/Two-Pointers/">Two Pointers</a><small>1</small></li>
+  
+    <li><a href="/categories/unity/UGUI/">UGUI</a><small>1</small></li>
+  
+    <li><a href="/categories/unity/animation/">animation</a><small>1</small></li>
+  
+    <li><a href="/categories/blog/">blog</a><small>3</small></li>
+  
+    <li><a href="/categories/coding/">coding</a><small>1</small></li>
+  
+    <li><a href="/categories/coding/compiler/">compiler</a><small>1</small></li>
+  
+    <li><a href="/categories/Spark/configuration/">configuration</a><small>1</small></li>
+  
+    <li><a href="/categories/leetcode/divide-and-conquer/">divide and conquer</a><small>1</small></li>
+  
+    <li><a href="/categories/dp/">dp</a><small>1</small></li>
+  
+    <li><a href="/categories/leetcode/dp/">dp</a><small>1</small></li>
+  
+    <li><a href="/categories/music/guitar/">guitar</a><small>1</small></li>
+  
+    <li><a href="/categories/language/">language</a><small>2</small></li>
+  
+    <li><a href="/categories/leetcode/">leetcode</a><small>9</small></li>
+  
+    <li><a href="/categories/language/Japanese/lyric/">lyric</a><small>1</small></li>
+  
+    <li><a href="/categories/mapreduce/">mapreduce</a><small>1</small></li>
+  
+    <li><a href="/categories/python/matplotlib/">matplotlib</a><small>1</small></li>
+  
+    <li><a href="/categories/music/">music</a><small>1</small></li>
+  
+    <li><a href="/categories/paper/">paper</a><small>2</small></li>
+  
+    <li><a href="/categories/programming-language/">programming language</a><small>1</small></li>
+  
+    <li><a href="/categories/python/">python</a><small>1</small></li>
+  
+    <li><a href="/categories/paper/scheduler/">scheduler</a><small>1</small></li>
+  
+    <li><a href="/categories/software-engineer/">software engineer</a><small>1</small></li>
+  
+    <li><a href="/categories/Spark/RDD/source-code/">source code</a><small>1</small></li>
+  
+    <li><a href="/categories/source-code/">source code</a><small>6</small></li>
+  
+    <li><a href="/categories/spark/">spark</a><small>2</small></li>
+  
+    <li><a href="/categories/unity/">unity</a><small>2</small></li>
+  
+  </ul>
+</div>
+
+
+  
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner">
+<div class="alignleft">
+  <script src="//dn-lbstatics.qbox.me/lbservice/busuanzi/2.0/busuanzi.mini.js"/></script>
+  <span id="busuanzi_container_site_uv">已经有<span id="busuanzi_value_site_uv"></span>人次访问carolz的小站啦 ( •̀ ω •́ )y</span>
+  <br /><br />
+  
+  &copy; 2017 6carol6
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>

@@ -1,0 +1,488 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>MapReduce Review | ShallWe Talk</title>
+  <meta name="author" content="6carol6">
+  
+  <meta name="description" content="本文是carolz童鞋整理的MapReduce课复习资料，由2015年复习提纲Slide整理而来。  
+###Ch1 并行计算技术简介###
+####1 为什么需要并行计算####
+#####提高计算机性能的基本手段#####提高字长 流水线微体系结构技术 提高集成度 提升主频  
+#####迫切需要发展并行计算技术的主要原因#####单处理器性能提升达到极限应用规模和数量急剧增大，超大的计算量/计算复杂度">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="MapReduce Review"/>
+  <meta property="og:site_name" content="ShallWe Talk"/>
+
+  
+    <meta property="og:image" content=""/>
+  
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="ShallWe Talk" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">ShallWe Talk</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div>
+</header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2015-05-27T14:34:23.000Z"><a href="/2015/05/27/2015-05-27-mapreduce-review/">2015-05-27</a></time>
+      
+      
+  
+    <h1 class="title">MapReduce Review</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>本文是carolz童鞋整理的MapReduce课复习资料，由2015年复习提纲Slide整理而来。  </p>
+<p>###Ch1 并行计算技术简介###</p>
+<p>####1 为什么需要并行计算####</p>
+<p>#####提高计算机性能的基本手段#####<br>提高字长 流水线微体系结构技术 提高集成度 提升主频  </p>
+<p>#####迫切需要发展并行计算技术的主要原因#####<br>单处理器性能提升达到极限<br>应用规模和数量急剧增大，超大的计算量/计算复杂度  </p>
+<a id="more"></a>
+<p>####2 并行计算技术的分类####</p>
+<p>#####有哪些主要的并行计算分类方法？#####<br>按数据和指令处理结构：弗林分类  </p>
+<ul>
+<li>单指令单数据流</li>
+<li>单指令多数据流</li>
+<li>多指令单数据流</li>
+<li>多指令多数据流</li>
+</ul>
+<p>按并行类型  </p>
+<ul>
+<li>位级并行</li>
+<li>指令级并行</li>
+<li>线程级并行（数据级并行、任务级并行）</li>
+</ul>
+<p>按存储访问类型  </p>
+<ul>
+<li>共享内存（UMA）</li>
+<li>分布式共享存储体系结构：本地存储器+全局存储器</li>
+<li>分布式内存：各处理器使用本地独立的存储器</li>
+</ul>
+<p><em>后两者统称NUMA</em></p>
+<p>按存储访问构架  </p>
+<p>按系统类型  </p>
+<ul>
+<li>多核/众核并行计算系统</li>
+<li>对称多处理系统</li>
+<li>大规模并行处理</li>
+<li>集群</li>
+<li>网格</li>
+</ul>
+<p>按计算特征  </p>
+<ul>
+<li>数据密集型并行计算：大规模Web信息搜索</li>
+<li>计算密集型并行计算：气象预报</li>
+<li>数据密集与计算密集混合型并行计算：3D电影渲染</li>
+</ul>
+<p>按并行程序设计模型/方法  </p>
+<ul>
+<li>共享内存变量</li>
+<li>消息传递方式</li>
+<li>MapReduce方式</li>
+</ul>
+<p>####3 并行计算的主要技术问题####</p>
+<p>#####并行计算有哪些方面的主要技术问题？####</p>
+<ul>
+<li>多核/多处理器网络互连结构技术</li>
+<li>存储访问体系结构</li>
+<li>分布式数据与文件管理</li>
+<li>并行计算任务分解与算法设计</li>
+<li>并行程序设计模型和方法</li>
+<li>数据同步访问和通信控制</li>
+<li>可靠性设计与容错技术：节点的失效与恢复</li>
+<li>并行计算软件框架平台</li>
+<li>系统性能评价和程序并行度评估</li>
+</ul>
+<p>#####如何评估程序的可并行度？（掌握Amdahl定律的重要作用）#####</p>
+<p>S=1/((1-P)+P/N)<br>S：加速比<br>P：程序可并行比例<br>N：处理器数目  </p>
+<p>一个并行程序可加速程度是有限制的，并非可无限加速，并非处理器越多越好。</p>
+<p>####4 MPI并行程序设计####</p>
+<ul>
+<li>MPI功能与特点<br>功能：基于消息传递的高性能并行计算编程接口。提供点对点通信（同步/异步）、节点集合通信（一对多，多节点计算控制，对结果的规约(reduce)计算功能）、用户自定义的复合数据类型传输。<br>特点：提供可靠的、面向消息的通信；在高性能科学计算领域广泛使用，适合于处理<strong>计算密集型</strong>的科学计算；独立于语言的编程规范，可移至性好。      </li>
+<li><p>MPI程序结构</p>
+<ul>
+<li><p>MPI程序头文件  <figure class="highlight plain"><figcaption><span><mpi.h>```</mpi.h></span></figcaption><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">- 初始化MPI环境  ```MPI_Init(&amp;argc, &amp;argv);</div></pre></td></tr></table></figure></p>
+</li>
+<li><p>并行计算与通信 </p>
+</li>
+<li><p>关闭MPI环境  <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">- MPI基本编程接口</div><div class="line">	- 初始化MPI ```MPI_Init(&amp;argc, &amp;argv);</div></pre></td></tr></table></figure></p>
+</li>
+<li><p>终止MPI并行计算  <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">- 确定指定范围内处理器/进程数目  ```MPI_Comm_Size(comm, size)</div></pre></td></tr></table></figure></p>
+</li>
+<li><p>确定一个处理器/进行的标识号  <figure class="highlight plain"><figcaption><span>rank)```</span></figcaption><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">- 发送一个消息  ```MPI_Send(buf, count, datatype, dest, tag, comm)</div></pre></td></tr></table></figure></p>
+</li>
+<li><p>接收消息  <figure class="highlight plain"><figcaption><span>count, datatype, source, tag, comm, status)```</span></figcaption><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div><div class="line">84</div><div class="line">85</div><div class="line">86</div><div class="line">87</div><div class="line">88</div><div class="line">89</div><div class="line">90</div><div class="line">91</div><div class="line">92</div><div class="line">93</div><div class="line">94</div><div class="line">95</div><div class="line">96</div><div class="line">97</div><div class="line">98</div><div class="line">99</div><div class="line">100</div><div class="line">101</div><div class="line">102</div><div class="line">103</div><div class="line">104</div><div class="line">105</div><div class="line">106</div><div class="line">107</div><div class="line">108</div><div class="line">109</div><div class="line">110</div><div class="line">111</div><div class="line">112</div><div class="line">113</div><div class="line">114</div><div class="line">115</div><div class="line">116</div><div class="line">117</div><div class="line">118</div><div class="line">119</div><div class="line">120</div><div class="line">121</div><div class="line">122</div><div class="line">123</div><div class="line">124</div><div class="line">125</div><div class="line">126</div><div class="line">127</div><div class="line">128</div><div class="line">129</div><div class="line">130</div><div class="line">131</div><div class="line">132</div><div class="line">133</div><div class="line">134</div><div class="line">135</div><div class="line">136</div><div class="line">137</div><div class="line">138</div><div class="line">139</div><div class="line">140</div><div class="line">141</div><div class="line">142</div><div class="line">143</div><div class="line">144</div><div class="line">145</div><div class="line">146</div><div class="line">147</div><div class="line">148</div><div class="line">149</div><div class="line">150</div><div class="line">151</div><div class="line">152</div><div class="line">153</div><div class="line">154</div><div class="line">155</div><div class="line">156</div><div class="line">157</div><div class="line">158</div><div class="line">159</div><div class="line">160</div><div class="line">161</div><div class="line">162</div><div class="line">163</div><div class="line">164</div><div class="line">165</div><div class="line">166</div><div class="line">167</div><div class="line">168</div><div class="line">169</div><div class="line">170</div><div class="line">171</div><div class="line">172</div><div class="line">173</div><div class="line">174</div><div class="line">175</div><div class="line">176</div><div class="line">177</div><div class="line">178</div><div class="line">179</div><div class="line">180</div><div class="line">181</div><div class="line">182</div><div class="line">183</div><div class="line">184</div><div class="line">185</div><div class="line">186</div><div class="line">187</div><div class="line">188</div><div class="line">189</div><div class="line">190</div><div class="line">191</div><div class="line">192</div><div class="line">193</div><div class="line">194</div><div class="line">195</div><div class="line">196</div><div class="line">197</div><div class="line">198</div><div class="line">199</div><div class="line">200</div><div class="line">201</div><div class="line">202</div><div class="line">203</div><div class="line">204</div><div class="line">205</div><div class="line">206</div><div class="line">207</div><div class="line">208</div><div class="line">209</div><div class="line">210</div><div class="line">211</div><div class="line">212</div><div class="line">213</div><div class="line">214</div><div class="line">215</div><div class="line">216</div><div class="line">217</div><div class="line">218</div></pre></td><td class="code"><pre><div class="line">- MPI编程实例  </div><div class="line"></div><div class="line">####5 为什么需要大规模数据并行处理####</div><div class="line"></div><div class="line">- 处理数据的能力大幅落后于数据增长</div><div class="line">- 海量数据隐含着更准确的事实</div><div class="line"></div><div class="line">#####什么是MapReduce？#####</div><div class="line"></div><div class="line">- 基于集群的高性能计算平台</div><div class="line">- 并行程序开发与运行框架</div><div class="line">- 并行程序设计模型与方法</div><div class="line"></div><div class="line">#####为什么MapReduce如此重要？#####</div><div class="line"></div><div class="line">- 高效的大规模数据处理方法</div><div class="line">- 改变了大规模尺度上组织计算的方式</div><div class="line">- 第一个不同于冯·诺依曼结构的、基于集群而非单机的计算方式的重大突破</div><div class="line">- 目前为止最成功的基于大规模计算资源的并行计算抽象方法</div><div class="line"></div><div class="line">###Ch2 MapReduce简介###</div><div class="line"></div><div class="line">####1 对付大数据处理-分而治之####</div><div class="line"></div><div class="line">- 大数据分而治之的并行化计算</div><div class="line">- 大数据任务划分和并行计算模型</div><div class="line"></div><div class="line">####2 构建抽象模型-map和reduce</div><div class="line"></div><div class="line">- 主要设计思想：为大数据处理过程中的两个主要处理操作提供一种抽象机制</div><div class="line">- 典型的流式大数据问题的特征</div><div class="line">- map和reduce操作的抽象描述：提供一种抽象机制，把做什么和怎么做分开，程序员仅需要描述做什么，不需要关心怎么做</div><div class="line">- 基于map和reduce的并行计算模型和计算过程</div><div class="line"></div><div class="line">####3 上升到构架-自动并行化并隐藏底层细节</div><div class="line"></div><div class="line">- 主要需求、目标和设计思想</div><div class="line">	- 实现自动并行化计算</div><div class="line">	- 为程序员隐藏系统层细节</div><div class="line">- mapreduce提供统一的构架并完成以下主要功能</div><div class="line">	- 任务调度</div><div class="line">	- 数据/代码互定位</div><div class="line">	- 出错处理</div><div class="line">	- 分布式数据存储与文件管理</div><div class="line">	- combiner和Partitioner(设计目的和作用)</div><div class="line"></div><div class="line">####4 MapReduce的主要设计思想和特征</div><div class="line"></div><div class="line">- 向“外”横向扩展，而非向“上”纵向扩展</div><div class="line">- 失效被认为是常态</div><div class="line">- 把计算处理向数据迁移</div><div class="line">- 顺序处理数据、避免随机访问数据</div><div class="line">- 为应用开发者隐藏技术层细节</div><div class="line">- 平滑无缝的可扩展性</div><div class="line"></div><div class="line">###Ch3 Google/Hadoop MapReduce基本架构（这章字好多啊同志们，要出问答题的节奏啊）</div><div class="line"></div><div class="line">####1 MapReduce的基本模型和处理思想</div><div class="line"></div><div class="line">三个层面上的基本构思  </div><div class="line"></div><div class="line">- **如何对付大数据处理：分而治之**</div><div class="line">	- 对相互间不具有计算依赖关系的大数据，实现并行最自然的办法就是采取分而治之的策略</div><div class="line">- **上升到抽象模型：Mapper和Reducer**</div><div class="line">	- MPI等并行计算方法缺少高层并行编程模型，为了克服这一缺陷，MapReduce借鉴了Lisp函数式语言中的思想，用Map和Reduce两个函数提供了高层的并行编程抽象模型</div><div class="line">- **上升到构架：统一构架，为程序员隐藏技术细节**</div><div class="line">	- MPI等并行计算方法缺少统一的计算框架支持，程序员需要考虑数据存储、划分、分发、结果收集、错误恢复等诸多细节；为此，MapReduce设计并提供了统一的计算框架，为程序员隐藏了绝大多数系统层面的处理细节</div><div class="line"></div><div class="line">####2 Google MapReduce的基本工作原理</div><div class="line">- **Google MapReduce并行处理的基本过程**</div><div class="line">	1. 有一个待处理的大数据，被划分为大小相同的数据块(如64MB)，及与此相应的用户作业程序</div><div class="line">	2. 系统中有一个负责调度的主节点(Master)，以及数据Map和Reduce工作节点(Worker)</div><div class="line">	3. 用户作业程序提交给主节点</div><div class="line">	4. 主节点为作业程序寻找和配备可用的Map节点，并将程序和数据传送给Map节点</div><div class="line">	5. 主节点也为作业程序寻找和配备可用的Reduce节点，并将程序传送给Reduce节点</div><div class="line">	6. 主节点启动每个Map节点执行程序，每个Map节点尽可能读取本地或本机架的数据进行计算</div><div class="line">	7. 每个Map节点处理读取的数据块，并做一些数据整理工作(combining, sorting等)并将中间结果存放在本地；同时通知主节点计算任务完成并告知中间结果数据存储位置</div><div class="line">	8. 主节点等所有Map节点计算完成后，开始启动Reduce节点运行；Reduce节点从主节点所掌握的中间结果数据位置信息，远程读取这些数据</div><div class="line">	9. Reduce节点计算结果汇总输出到一个结果文件，即获得整个处理结果</div><div class="line">- **带宽优化(Combiner的设计目的和作用)**</div><div class="line">	- 目的：解决大量的键值对数据在传送给Reduce节点时会引起较大的通信带宽开销问题</div><div class="line">	- 解决方案：每个Map节点处理完成的中间键值对将由combiner做一个合并压缩，即把那些键名相同的键值对归并为一个键名下的一组数值</div><div class="line">- **用数据分区解决数据相关性问题(Partitioner的设计目的和作用)**</div><div class="line">	- 问题：一个Reduce节点上的计算数据可能来自多个Map节点。因此，为了在进入Reduce节点计算之前，需要把属于一个Reduce节点的数据归并到一起</div><div class="line">	- 解决方案：在Map阶段进行了Combining以后，可以根据一定的策略对Map输出的中间结果进行分区(partitioning)，这样即可解决以上数据相关性问题，避免Reduce计算过程中的数据通信</div><div class="line">- **失效处理**</div><div class="line">	- **主节点失效**：主节点中会周期性地设置检查点(checkpoint)，检查整个计算作业的执行情况，一旦某个任务失效，可以从最近有效的检查点开始重新执行，避免从头开始计算的时间浪费</div><div class="line">	- **工作节点失效**：工作节点失效是很普遍发生的，主节点会周期性地给工作节点发送心跳检测，如果工作节点没有回应，则认为该工作节点失效，主节点讲终止该工作节点的任务并把失效的任务重新调度到其它工作节点上重新执行</div><div class="line">- **计算优化**</div><div class="line">	- 问题：Reduce节点必须要等到所有Map节点计算结束才能开始执行。因此，如果有一个计算量大、或者由于某个问题导致很慢结束的Map节点，则会成为严重的“拖后腿者”</div><div class="line">	- 解决方案：把一个Map计算任务让多个Map节点同时做，取最快完成者的计算结果</div><div class="line"></div><div class="line">####3 Hadoop MapReduce的基本工作原理</div><div class="line"></div><div class="line">- **Hadoop MapReduce基本架构与工作过程**</div><div class="line">	- **JobTracker的作用**：对等于Google MapReduce中的Master。主要负责资源监控和数据调度。JobTracker监控所有的TaskTracker与作业的健康状态，同时JobTracker会跟踪任务的执行进度、资源使用量等信息</div><div class="line">	- **TaskTracker的作用**：对等于Google MapReduce中的Worker。会周期性地通过心跳将本节点上资源的使用情况和任务运行进度汇报给JobTracker，同时接收JobTracker发送过来的命令并执行相应的操作</div><div class="line">	- **MapReduce作业执行过程**</div><div class="line">		- 对于mapTask</div><div class="line">			- 首先通过用户提供的InputFormat将对应的InputSplit解析成一系列key/value，并依次交给用户编写的map()函数处理</div><div class="line">			- 接着将数据交给由用户定义的combiner进行一次本地规约</div><div class="line">			- 按照指定的partitioner对数据分片，以确定每个key/value将交给哪个reducer处理</div><div class="line">			- 将处理结果保存在本地磁盘上</div><div class="line">		- 对于reduceTask</div><div class="line">			- 由于其数据来自各个map task，首先需要通过HTTP请求从各个已经完成的Map task上拷贝对应的数据分片。</div><div class="line">			- 待所有数据拷贝完成后，再以key作为关键字对所有数据进行排序</div><div class="line">			- 将每组数据交由用户编写的reduce()函数处理，并将数据直接写到HDFS上作为最终输出结果</div><div class="line">- **Hadoop MapReduce主要组件**</div><div class="line">	- **文件输入格式InputFormat**：定义了数据文件如何分割和读取</div><div class="line">	- **输入数据分块InputSplits**：定义了输入到单个Map任务的输入数据</div><div class="line">	- **数据记录读入RecordReader**：定义了如何读取数据记录</div><div class="line">	- **Mapper**：每个Mapper实例生成一个java进程，负责处理一个InputSplit上的数据</div><div class="line">	- **Combiner**：合并相同key的键值对，减少传输给reduce节点时候的通信开销</div><div class="line">	- **Partitioner**：使用partitioner类来决定键值对传给哪一个reduce节点</div><div class="line">	- **Reducer**：做用户定义的reduce操作</div><div class="line">	- **文件输出格式OutputFormat**：写入到HDFS中，默认的RecordWriter是LineRecordWriter，以key\tvalue的格式输出</div><div class="line">- 容错处理与计算性能优化</div><div class="line">	- Hadoop系统会将失败的任务再次执行，TaskTracker将状态信息汇报给JobTracker，最终由JobTracker决定冲洗执行哪个任务</div><div class="line">	- 为了加快执行速度，Hadoop也会同时多次执行一个任务，以最先执行成功的为准</div><div class="line"></div><div class="line">####4 分布式文件系统GFS的基本工作原理</div><div class="line"></div><div class="line">- **Google GFS的基本设计原则**</div><div class="line">	- 廉价本地磁盘分布存储</div><div class="line">	- 多数据自动备份解决可靠性</div><div class="line">	- 为上层MapReduce计算框架提供支撑</div><div class="line">- **Google GFS的基本架构和工作原理**</div><div class="line">	- **GFS Master的主要作用**：  </div><div class="line">	保存了GFS文件系统的三种元数据。前两种元数据可通过操作日志提供容错处理能力；第3个元数据直接保存在ChunkSercer上，Master启动Chunk Server注册时自动完成在Chunk Server上元数据的生成</div><div class="line">		- 命名空间</div><div class="line">		- Chunk与文件名的映射表</div><div class="line">		- Chunk副本的位置信息，每一个Chunk默认有3个副本  </div><div class="line">	- **GFS ChunkSever的主要作用**  </div><div class="line">	用来保存大量实际数据的数据服务器</div><div class="line">		- GFS中每个数据块划分缺省为64MB</div><div class="line">		- 每个数据块会分别在3个(缺省情况下)不同的地方复制副本</div><div class="line">		- 对每一个数据块，仅当3个副本都更新成功时，才认为数据保存成功</div><div class="line">		- 当某个副本失效时，Master会自动将正确的副本数据进行复制以保证足够的副本数</div><div class="line">		- GFS上存储的数据块副本，在物理上以一个本地的Linux操作他系统的文件形式存储，每一个数据块再划分为64KB的子块，每个子块有一个32位的校验和，读数据时会检查校验和以保证使用未失效的数据</div><div class="line">	- **数据访问工作过程**（第3条和第4条是什么鬼，难道不一样？可以看图意会╮(╯▽╰)╭）</div><div class="line">		1. 在程序运行前，数据已经存储在GFS文件系统中；程序实行时应用程序会告诉Master所要访问的文件名或者数据块索引是什么</div><div class="line">		2. Master根据文件名和数据块索引在其文件目录空间中查找和定位该文件或数据块，并找出数据块具体在哪些ChunkServer上；将这些位置信息送回给应用程序</div><div class="line">		3. 应用程序根据GFS Master返回的具体Chunk数据块位置信息，直接访问相应的ChunkServer</div><div class="line">		4. 应用程序根据Master返回的具体Chunk数据块位置信息直接读取指定位置的数据进行计算处理</div><div class="line">	- **GFS的系统管理技术**</div><div class="line">		- 大规模集群安装技术</div><div class="line">		- 故障检测技术</div><div class="line">		- 节点动态加入技术</div><div class="line">		- 节能技术</div><div class="line"></div><div class="line">####5 分布式结构化数据表BigTable</div><div class="line"></div><div class="line">- BigTable的基本作用和设计思想（什么鬼，肯定不考）</div><div class="line">	- GFS是一个文件系统，难以提供对结构化数据的存储和访问管理。为此，Google在GFS之上又设计了一个结构化数据存储和访问管理。</div><div class="line">	- Google的很多数据结构，包括Web索引、卫星图像数据、地图数据等都以结构化的形式存在BigTable中</div><div class="line">	- BigTable提供了一定粒度的结构化数据操作能力，主要解决一些大型媒体数据的结构化存储问题。但与传统的关系型数据库相比，其结构化粒度没有那么高，也没有事务处理能力，因此它不是真正意义上的数据库。</div><div class="line">- BigTable的设计动机和目标</div><div class="line">	- 需要存储管理海量的结构化半结构化数据</div><div class="line">	- 海量的服务请求</div><div class="line">	- 商用数据库无法适用</div><div class="line">- BigTable数据模型-多维表</div><div class="line">	- 一个行关键字(row key)</div><div class="line">	- 一个列关键字(column key)</div><div class="line">	- 一个时间戳(time stamp)</div><div class="line">- BigTable基本构架</div><div class="line">	- 子表服务器：</div><div class="line">		- BigTable中的数据都以自表形式保存在子表服务器上，客户端程序也直接和子表服务器通信。当一个新子表产生时子表服务器的主要问题包括子表的定位、分配及子表数据的最终存储。</div><div class="line">	- 子表存储结构SSTable(对应于GFS数据块)：</div><div class="line">		- SSTable是BigTable内部的**基本存储结构**，以GFS文件形式存储在GFS文件系统中。一个SSTable实际上对应于GFS中的一个64MB的数据块(Chunk)</div><div class="line">		- SSTable中的数据进一步划分为64KB的子块，因此一个SSTable可以有多达1K个这样的子块。为了维护这些子块的位置信息，需要使用一个Index索引(一个SSTable一个Index)。</div><div class="line">	- 子表数据格式</div><div class="line">		- 概念上子表是整个大表的多行数据划分后构成。而一个子表服务器上的子表将进一步由很多个SSTable构成，每个SSTable构成最终的在底层GFS中的存储单位。</div><div class="line">		- 一个SSTable还可以为不同的子表所共享，以避免同样数据的重复存储。</div><div class="line">	- 子表寻址</div><div class="line">		- 子表地址以3级B+树形式进行索引：首先从Chubby服务器中取得根子表，最后获取最终的SSTable位置</div><div class="line">		- Chubby file -&gt; Root Tablet -&gt; Other METADATA Tablets -&gt; UserTable</div><div class="line"></div><div class="line">####6 Hadoop分布式文件系统HDFS</div><div class="line"></div><div class="line">- HDFS的基本特征</div><div class="line">	- 模仿GFS设计实现</div><div class="line">	- 存储极大数目的信息，将数据保存到大量节点当中，支持很大的单个文件</div><div class="line">	- 提供数据的高可靠性和容错能力，单个或多个节点不工作，对系统不会造成任何影响，数据仍然可用。通过一定数量的数据复制保证数据存储的可靠性和出错恢复能力</div><div class="line">	- 提供对数据的快速访问；并提供良好的可扩展性，通过简单加入更多服务器快速扩充系统容量，服务更多的客户端</div><div class="line">	- 与GFS类似，HDFS是MapReduce的底层数据存储支撑，并使得数据尽可能根据其本地局部性进行访问和计算</div><div class="line">	- HDFS对顺序读进行了优化，支持大量数据的快速顺序读出，代价是对于随机访问的负载较高</div><div class="line">	- 数据支持一次写入，多次读取；*不支持已写入的数据的更新操作*，但允许在文件尾部添加新的数据</div><div class="line">	- 数据不进行本地缓存（文件很大，且顺序读没有局部性）</div><div class="line">	- 基于块的文件存储，默认的块大小为64MB</div><div class="line">		- 减少元数据的量</div><div class="line">		- 有利于顺序读写（在磁盘上数据顺序存放）</div><div class="line">	- 多副本数据块形式存储，按照块的方式随机选择存储节点，默认副本数是3</div><div class="line">- HDFS的基本架构</div><div class="line">	- NameNode的作用：对等于GFS的Master，负责管理HDFS的目录树和相关的文件元数据信息，同时还负责监控各个DataNode的健康状态</div><div class="line">	- DataNode的作用：对等于GFS的ChunkServer，负责存储实际的数据，并将数据信息定期汇报给NameNode</div><div class="line">- HDFS数据分布设计</div><div class="line">	- 多副本数据块形式存储，按照块的方式随机选择存储节点。默认副本数为3（这话怎么这么眼熟）</div><div class="line">- **HDFS可靠性与出错恢复**</div><div class="line">	- DataNode节点的检测</div><div class="line">		- 心跳：NameNode不断检测DataNode是否有效</div><div class="line">		- 若失效，则寻找新的节点替代，将失效节点数据重新分布</div><div class="line">	- 集群负载均衡</div><div class="line">	- 数据一致性：校验和checksum</div><div class="line">	- 主节点元数据失效（与MapReduce类似）</div><div class="line">		- Multiple FsImage（文件系统状态） and EditLog（更新记录）</div><div class="line">		- CheckPoint</div><div class="line">- HDFS的安装和启动(卧槽这也有?!)</div><div class="line">- HDFS文件系统操作命令</div><div class="line">	- 如果考这个也太变态了吧，写几个基本的</div><div class="line">		- `bin/hadoop dfs -ls path`</div><div class="line">		- `bin/hadoop dfs -put localSrc dest`</div><div class="line"></div><div class="line">####7 Hadoop分布式文件系统HDFS编程(这怎么考啊。。。假装不考(⊙﹏⊙)b)</div><div class="line"></div><div class="line">- FileSystem基类</div><div class="line">	- 是一个用来与文件系统交互的抽象类，可以通过实现FileSystem的子类来处理具体的文件系统，比如HDFS或其他文件系统</div><div class="line">- 创建文件</div><div class="line">	- ```public FSDataOutputStream create(Path f)</div></pre></td></tr></table></figure></p>
+</li>
+<li><figure class="highlight plain"><figcaption><span>FSDataOutputStream create(Path f, boolean overwrite)```</span></figcaption><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">- ```public FSDataOutputSream create(Path f, boolean overwrite, int bufferSize)</div></pre></td></tr></table></figure>
+</li>
+</ul>
+</li>
+<li><p>打开文件</p>
+<ul>
+<li><figure class="highlight plain"><figcaption><span>abstract FSDataInputStream open(Path f, int bufferSize) throws IOException```</span></figcaption><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div><div class="line">84</div><div class="line">85</div><div class="line">86</div><div class="line">87</div><div class="line">88</div><div class="line">89</div><div class="line">90</div><div class="line">91</div><div class="line">92</div><div class="line">93</div><div class="line">94</div><div class="line">95</div><div class="line">96</div><div class="line">97</div><div class="line">98</div><div class="line">99</div><div class="line">100</div><div class="line">101</div><div class="line">102</div><div class="line">103</div><div class="line">104</div><div class="line">105</div><div class="line">106</div><div class="line">107</div><div class="line">108</div><div class="line">109</div><div class="line">110</div><div class="line">111</div><div class="line">112</div><div class="line">113</div><div class="line">114</div><div class="line">115</div><div class="line">116</div><div class="line">117</div><div class="line">118</div><div class="line">119</div><div class="line">120</div><div class="line">121</div><div class="line">122</div><div class="line">123</div><div class="line">124</div><div class="line">125</div><div class="line">126</div><div class="line">127</div><div class="line">128</div><div class="line">129</div><div class="line">130</div><div class="line">131</div><div class="line">132</div><div class="line">133</div><div class="line">134</div><div class="line">135</div><div class="line">136</div><div class="line">137</div><div class="line">138</div><div class="line">139</div></pre></td><td class="code"><pre><div class="line">- 获取文件信息</div><div class="line">- 获取目录信息</div><div class="line">- 文件读取</div><div class="line">- 文件写入</div><div class="line">- 关闭</div><div class="line">- 删除</div><div class="line"></div><div class="line">###Ch4 Hadoop系统安装运行与程序开发（这章应该不考。。。吧）</div><div class="line"></div><div class="line">####1 Hadoop安装方式</div><div class="line"></div><div class="line">- 单机方式</div><div class="line">- 单机伪分布式方式：用进程模拟NameNode, DataNode, JobTracker, TaskTracker等节点</div><div class="line">- 集群分布模式</div><div class="line"></div><div class="line">####2 单机Hadoop系统安装基本步骤</div><div class="line"></div><div class="line">####3 集群Hadoop系统安装基本步骤</div><div class="line"></div><div class="line">####4 Hadoop集群远程作业提交与执行</div><div class="line"></div><div class="line">- 程序开发与提交作业基本过程</div><div class="line">- 集群分布式下远程提交作业</div><div class="line"></div><div class="line">####Hadoop MapReduce程序开发</div><div class="line"></div><div class="line">###Ch5 MapReduce算法设计</div><div class="line"></div><div class="line">####1 MapReduce可解决哪些算法问题？</div><div class="line"></div><div class="line">- 基本算法</div><div class="line">	- 分布式排序 分布式文本匹配查找 关系代数操作 矩阵向量乘法 词频统计 单词同现关系分析 文档倒排索引</div><div class="line">- 复杂算法或应用</div><div class="line">	- Web搜索 Web访问日志分析 数据/文本统计分析 图算法 聚类 机器学习 数据挖掘 生物信息统计 统计机器翻译 广告推送 推荐系统</div><div class="line"></div><div class="line">####2 回顾：**MapReduce流水线**（加粗）</div><div class="line"></div><div class="line">1. map(K1, V1) -&gt; [(K2, V2)]</div><div class="line">2. shuffle and sort</div><div class="line">3. reduce(K2,[V2])-&gt;[(K3, V3)]</div><div class="line"></div><div class="line">其中[]表示一个list</div><div class="line"></div><div class="line">####3 MapReduce排序算法</div><div class="line"></div><div class="line">*要写代码的地方都先占个坑！*</div><div class="line"></div><div class="line">####4 MapReduce文档同现分析算法</div><div class="line">####5 MapReduce文档倒排索引算法（加粗）####</div><div class="line">####6 专利文献数据分析</div><div class="line"></div><div class="line">###Ch6 HBase与Hive程序设计</div><div class="line"></div><div class="line">####1 HBase基本工作原理</div><div class="line">- **HBase的设计目标和功能特点**</div><div class="line">	1. 针对HDFS缺少结构化半结构化数据存储访问能力的缺陷，针对一个分布式数据管理系统，解决大规模的结构化数据和半结构化数据存储访问问题</div><div class="line">	2. 基于列表存储模式和大数据表管理能力</div><div class="line">	3. 提供随机和实时的数据读写访问能力</div><div class="line">	4. 具有高可扩展性、高可用性、容错处理能力、负载平衡能力、以及对实时数据查询能力</div><div class="line">- HBase数据模型</div><div class="line">	1. 表中数据通过一个行关键字、一个列关键字、一个时间戳进行查询和定位</div><div class="line">	2. 物理存储格式上按照列族存储，一行中一个列族的数据不一定存放在一个HFile里，单同一行的数据在一个region里被管理；值为空的列不予存储，以节省存储空间；访问不同列族的数据设计不同的Memstore和HFile</div><div class="line">- HBase的基本构架</div><div class="line">	- 由一个master server和一组子表数据区服务器region server构成，大表中的底层数据存储在HDFS中</div><div class="line">- HBase的数据存储和管理</div><div class="line">	- 大表被分为多个子表Region，每个子表存在一个Region Server上，而一个Region Server可以存储多个region。每个region有很多个数据存储块store构成，每个store数据块又有存放在内存当中的memStore和存放在文件当中的StoreFile构成</div><div class="line">	- 当内存中的memStore数据达到一定大小时，系统将自动把数据写入到文件数据块StoreFile中，而每个文件数据块最终都写入到底层HDFS中</div><div class="line"></div><div class="line">####2 HBase基本操作与编程方法示例</div><div class="line">- HBase shell操作</div><div class="line">	- 创建表格与列举表格</div><div class="line">	- 插入数据</div><div class="line">	- 描述表信息</div><div class="line">	- 输入数据与扫描数据</div><div class="line">	- 限制列进行扫描</div><div class="line">	- HBase中的disable和enable</div><div class="line">- HBase的java编程</div><div class="line">	- 创建表</div><div class="line">	- 删除表</div><div class="line">	- 查询数据</div><div class="line">	- 插入数据</div><div class="line">	- 删除数据</div><div class="line">	- 切分表</div><div class="line"></div><div class="line">####3 Hive基本工作原理</div><div class="line">- 在Hadoop上用SQL进行数据分析</div><div class="line">- Hive的组成模块</div><div class="line">	- HiveQL：Hive的数据查询语言，与SQL类似，Hive提供了这个数据查询语言与用户的接口</div><div class="line">	- Driver：执行的驱动，用以将各个组成部分形成一个有机的执行系统</div><div class="line">	- Complier：将HiveQL编译成中间表示</div><div class="line">	- Execution Engine：执行引擎</div><div class="line">	- Metastore：用以存储元数据，保存最重要的信息，有关数据库中的数据表格描述，包括每个表格的格式定义，列的类型，物理分布情况</div><div class="line">- Hive的系统结构</div><div class="line">- Hive的数据模型</div><div class="line">- 元数据村粗：Metastore</div><div class="line">- 数据的物理分布情况</div><div class="line">- Hive系统的配置</div><div class="line"></div><div class="line">####4 Hive基本操作示例</div><div class="line">- 启动Hive的命令行界面shell</div><div class="line">- 创建数据表</div><div class="line">- 装入数据</div><div class="line">- SELECTS and FILTERS</div><div class="line">- Group By</div><div class="line">- Join</div><div class="line"></div><div class="line">###Ch7 高级MapReduce编程技术（天啊！这一章都是什么鬼！）</div><div class="line"></div><div class="line">####1 复合键值对的使用（这个加粗了）</div><div class="line">- 用复合键值对让系统完成排序</div><div class="line">- 把小的键值对合并成大的键值对</div><div class="line"></div><div class="line">####2 用户自定义数据类型</div><div class="line">- Hadoop内置的数据类型</div><div class="line">- 用户自定义数据类型</div><div class="line">	- 需要实现Writable接口</div><div class="line">	- 作为key或者需要比较大小的时候则需要实现WritableComparable接口</div><div class="line"></div><div class="line">####3 用户自定义输入输出格式</div><div class="line">- Hadoop内置的文件输入格式</div><div class="line">	- TextInputFormat</div><div class="line">	- KeyValueTextInputFormat</div><div class="line">- Hadoop内置的RecordReader</div><div class="line">	- LineRecorderReader</div><div class="line">	- KeyValueLineRecordReader</div><div class="line">- 用户自定义InputFormat和RecordReader的方法</div><div class="line">- Hadoop内置的文件输出格式</div><div class="line">- Hadoop内置的RecordWriter</div><div class="line">- 用户自定义OutputFormat和RecordWriter的方法</div><div class="line"></div><div class="line"></div><div class="line">*要写代码的地方都先占个坑！*</div><div class="line">####4 用户自定义Partitioner和Combiner</div><div class="line">####5 迭代完成MapReduce计算</div><div class="line">####6 组合式MapReduce任务</div><div class="line">- MapReduce子任务的顺序化执行</div><div class="line">- 具有数据依赖关系的MapReduce子任务的执行</div><div class="line">- MapReduce前处理和后处理步骤的链式执行</div><div class="line">	- ```ChainMapper.addMapper(...)</div></pre></td></tr></table></figure>
+</li>
+<li><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"></div><div class="line">####7 多数据源的连接</div><div class="line">- 用DataJoin类实现Reduce端Join</div><div class="line">	- 连接主键GroupKey与记录标签Tag</div><div class="line">	- DataJoinMapperBase</div><div class="line">	- DataJoinReducerBase</div><div class="line">	- TaggedMapOutput</div><div class="line">	- Mapper需要实现的抽象方法</div><div class="line">		- ```abstract Text generateInputTag(String inputFile)</div></pre></td></tr></table></figure>
+<ul>
+<li><code>abstract TaggedMapOutput generateTaggedMapOutput(Object value)</code></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>用文件复制实现Map端Join<br>  用distributed cache将一个或多个小数据量文件分布复制到所有节点上</li>
+<li>带Map端过滤的Reduce端Join</li>
+<li>多数据源连接解决方法的限制</li>
+</ul>
+<p>####8 全局参数/数据文件的传递</p>
+<ul>
+<li>全局作业参数的传递<ul>
+<li>Configuaration类专门提供以下用于保存和获取属性的方法</li>
+<li>mapper/reducer类初始化方法setup()从configuration对象中读出属性 </li>
+</ul>
+</li>
+<li>全局数据文件的传递（见上distributed cache的使用（第7个问题我还么得写上））</li>
+</ul>
+<p>####9 其它处理技术</p>
+<ul>
+<li>查询任务相关信息</li>
+<li><strong>划分多个输出文件集合</strong></li>
+<li>输入输出到关系数据库</li>
+<li>从数据库中输入数据<ul>
+<li>DBInputFormat</li>
+<li>DBRecordReader</li>
+</ul>
+</li>
+<li>向数据库中输出计算结果</li>
+</ul>
+<p>###Ch8 基于MapReduce的搜索引擎算法</p>
+<p>####1 网页排名图算法PageRank</p>
+<p>PageRank是Google用来标识网页的等级或重要性的一种方法。其级别从1到10，PR值越高说明越受欢迎（越重要）。</p>
+<ul>
+<li>PageRank的基本设计思想和设计原则<ul>
+<li>被许多优质网页所链接的网页，多半也是优质网页</li>
+<li>一个网页想要拥有较高的PR值的条件：<ul>
+<li>有很多网页链接到它</li>
+<li>有高质量的网页链接到它</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>PageRanks的简化模型及其缺陷<ul>
+<li>可以把互联网上的各个网页之间的链接关系看成一个有向图</li>
+<li>对于任意网页u，它的PageRank值可以表现为<br><img src="http://upload.wikimedia.org/math/a/c/4/ac48cfa215bf51c9cab4b92df790674b.png" alt="PageRank-Simple"><br>其中B(u)表示所有链接到网页u的网页的集合<br>L(v)表示网页v的对外链接个数</li>
+<li>缺陷：实际网络超链接环境没有那么理想化，会面临以下两个问题：<ul>
+<li>Rank Leak：一个独立的网页如果没有外出链接就会产生排名泄露<ul>
+<li>将无出度的节点递归地从图中去掉，待其它节点计算完后再加上</li>
+<li>对无出度的节点添加一条边，指向指向它的那些节点</li>
+</ul>
+</li>
+<li>Rank Sink：整个网页图中若有网页没有入度链接，其产生的贡献就会被吞噬，排名就会下沉，PR会趋向于0</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>PageRank的随机浏览模型<ul>
+<li>假定一个上网者从一个随机网页开始浏览</li>
+<li>上网者不断点击当前网页的链接开始下一次浏览</li>
+<li>但是，上网者最终厌倦了，开始了一个随机的网页</li>
+<li>随机上网者用以上方式访问一个新网页的概率就等于这个网页的PR值</li>
+<li>这种随机模型更加接近于用户的浏览行为</li>
+</ul>
+</li>
+<li>随机浏览模型的PageRank公式<br><img src="http://upload.wikimedia.org/math/8/0/1/80125f33d12ceb608fdb9daec09d9c10.png" alt="PageRank-Random"><br>d是初始设置的访问链接的概率<br>N表示网页的总数  </li>
+<li>用MapReduce实现PageRank<ol>
+<li>GraphBuilder</li>
+<li>PageRankIter</li>
+<li>Rankreview</li>
+<li>PageRank迭代终止条件</li>
+</ol>
+</li>
+</ul>
+<p>####2 全文搜索引擎算法的设计实现（灰色）</p>
+<ul>
+<li>离线Web文档倒排索引处理</li>
+<li>基于倒排索引实现在线全文检索</li>
+</ul>
+<p>###Ch9 基于MapReduce的数据挖掘基础算法</p>
+<p>####1 基于MapReduce的K-means并行化算法</p>
+<ul>
+<li>数据挖掘并行算法研究的重要性</li>
+<li>K-means聚类算法</li>
+<li>基于MapReduce的k-means并行算法设计</li>
+<li>聚类算法应用实例</li>
+</ul>
+<p>####2 基于MapReduce的分类并行化算法</p>
+<ul>
+<li>分类问题的基本描述</li>
+<li>k-最近邻分类并行化算法</li>
+<li>朴素贝叶斯分类并行化算法</li>
+</ul>
+<p>####3 基于MapReduce的频繁项集挖掘算法</p>
+<ul>
+<li>频繁项集挖掘基本问题</li>
+<li>现有算法概述</li>
+<li>PSON: 基于MapReduce的并行化算法</li>
+<li>并行化算法实验结果</li>
+</ul>
+<p>###Ch10 Spark系统及其编程技术</p>
+<p>####1 Spark系统简介</p>
+<ul>
+<li>为什么会有Spark？</li>
+<li>Spark基本架构及组件<ul>
+<li>Master node + Driver</li>
+<li>Worker node + Executors</li>
+</ul>
+</li>
+<li>Spark的程序执行过程<ul>
+<li>Application(Driver+Executors), Job, Stage, Task</li>
+</ul>
+</li>
+<li>Spark的技术特点<ul>
+<li>基于内存计算的弹性分布式数据集（RDD）</li>
+<li>灵活的计算流图（DAG）</li>
+<li>覆盖多种计算模式（查询分析、批处理、流式计算、迭代计算、图计算、内存计算）</li>
+</ul>
+</li>
+<li>Spark编程模型与编程接口<ul>
+<li>RDD Transformation &amp; Action</li>
+<li>Scala, Java, Python</li>
+</ul>
+</li>
+<li>Spark的安装运行模式<ul>
+<li>Stand-Alone, YARN, MESOS, Docker</li>
+</ul>
+</li>
+</ul>
+<p>####2 Spark编程</p>
+<ul>
+<li>WordCount</li>
+<li>KMeans</li>
+</ul>
+<p>####3 Spark环境中其他功能组件简介</p>
+<ul>
+<li>SparkSQL</li>
+<li>Spark Streaming</li>
+<li>GraphX</li>
+<li>MLlib</li>
+</ul>
+<p>###Ch11 云计算技术简介</p>
+<ul>
+<li>什么是云计算</li>
+<li>云计算的主要特点</li>
+<li>云计算的分类</li>
+<li>云计算发展现状与趋势</li>
+<li>云计算关键技术</li>
+<li>云计算管理调度软件平台</li>
+</ul>
+
+      
+    </div>
+    <footer>
+      
+        
+  
+  <div class="categories">
+    <a href="/categories/mapreduce/">mapreduce</a>
+  </div>
+
+        
+        
+  <div class="addthis addthis_toolbox addthis_default_style">
+    
+      <a class="addthis_button_facebook_like" fb:like:layout="button_count"></a>
+    
+    
+      <a class="addthis_button_tweet"></a>
+    
+    
+      <a class="addthis_button_google_plusone" g:plusone:size="medium"></a>
+    
+    
+      <a class="addthis_button_pinterest_pinit" pi:pinit:layout="horizontal"></a>
+    
+    <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js"></script>
+
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+<section id="comment">
+  <h1 class="title">Kommentare</h1>
+
+  
+      <div id="fb-root"></div>
+<script>
+  (function(d, s, id) {
+    var js, fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) return;
+    js = d.createElement(s); js.id = id;
+    js.src = "//connect.facebook.net/en_US/all.js#xfbml=1&appId=123456789012345";
+    fjs.parentNode.insertBefore(js, fjs);
+  }(document, 'script', 'facebook-jssdk'));
+</script>
+
+<div class="fb-comments" data-href="http://yoursite.com/2015/05/27/2015-05-27-mapreduce-review/index.html" data-num-posts="5" data-width="840" data-colorscheme="light"></div>
+      
+  
+</section>
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="Suche">
+    <input type="hidden" name="q" value="site:yoursite.com">
+  </form>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">Kategorien</h3>
+  <ul class="entry">
+  
+    <li><a href="/categories/software-engineer/API/">API</a><small>1</small></li>
+  
+    <li><a href="/categories/Beijing/">Beijing</a><small>1</small></li>
+  
+    <li><a href="/categories/C语言学习笔记/">C语言学习笔记</a><small>1</small></li>
+  
+    <li><a href="/categories/leetcode/HashTable/">HashTable</a><small>1</small></li>
+  
+    <li><a href="/categories/source-code/JXIO/">JXIO</a><small>1</small></li>
+  
+    <li><a href="/categories/language/Japanese/">Japanese</a><small>2</small></li>
+  
+    <li><a href="/categories/paper/NLP/">NLP</a><small>1</small></li>
+  
+    <li><a href="/categories/Spark/RDD/">RDD</a><small>1</small></li>
+  
+    <li><a href="/categories/Security/">Security</a><small>1</small></li>
+  
+    <li><a href="/categories/Spark/">Spark</a><small>2</small></li>
+  
+    <li><a href="/categories/source-code/Spark/">Spark</a><small>5</small></li>
+  
+    <li><a href="/categories/leetcode/Two-Pointers/">Two Pointers</a><small>1</small></li>
+  
+    <li><a href="/categories/unity/UGUI/">UGUI</a><small>1</small></li>
+  
+    <li><a href="/categories/unity/animation/">animation</a><small>1</small></li>
+  
+    <li><a href="/categories/blog/">blog</a><small>3</small></li>
+  
+    <li><a href="/categories/coding/">coding</a><small>1</small></li>
+  
+    <li><a href="/categories/coding/compiler/">compiler</a><small>1</small></li>
+  
+    <li><a href="/categories/Spark/configuration/">configuration</a><small>1</small></li>
+  
+    <li><a href="/categories/leetcode/divide-and-conquer/">divide and conquer</a><small>1</small></li>
+  
+    <li><a href="/categories/dp/">dp</a><small>1</small></li>
+  
+    <li><a href="/categories/leetcode/dp/">dp</a><small>1</small></li>
+  
+    <li><a href="/categories/music/guitar/">guitar</a><small>1</small></li>
+  
+    <li><a href="/categories/language/">language</a><small>2</small></li>
+  
+    <li><a href="/categories/leetcode/">leetcode</a><small>9</small></li>
+  
+    <li><a href="/categories/language/Japanese/lyric/">lyric</a><small>1</small></li>
+  
+    <li><a href="/categories/mapreduce/">mapreduce</a><small>1</small></li>
+  
+    <li><a href="/categories/python/matplotlib/">matplotlib</a><small>1</small></li>
+  
+    <li><a href="/categories/music/">music</a><small>1</small></li>
+  
+    <li><a href="/categories/paper/">paper</a><small>2</small></li>
+  
+    <li><a href="/categories/programming-language/">programming language</a><small>1</small></li>
+  
+    <li><a href="/categories/python/">python</a><small>1</small></li>
+  
+    <li><a href="/categories/paper/scheduler/">scheduler</a><small>1</small></li>
+  
+    <li><a href="/categories/software-engineer/">software engineer</a><small>1</small></li>
+  
+    <li><a href="/categories/Spark/RDD/source-code/">source code</a><small>1</small></li>
+  
+    <li><a href="/categories/source-code/">source code</a><small>6</small></li>
+  
+    <li><a href="/categories/spark/">spark</a><small>2</small></li>
+  
+    <li><a href="/categories/unity/">unity</a><small>2</small></li>
+  
+  </ul>
+</div>
+
+
+  
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner">
+<div class="alignleft">
+  <script src="//dn-lbstatics.qbox.me/lbservice/busuanzi/2.0/busuanzi.mini.js"/></script>
+  <span id="busuanzi_container_site_uv">已经有<span id="busuanzi_value_site_uv"></span>人次访问carolz的小站啦 ( •̀ ω •́ )y</span>
+  <br /><br />
+  
+  &copy; 2017 6carol6
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>

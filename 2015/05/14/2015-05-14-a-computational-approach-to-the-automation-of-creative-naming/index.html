@@ -1,0 +1,314 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>A Computational Approach to the Automation of Creative Naming | ShallWe Talk</title>
+  <meta name="author" content="6carol6">
+  
+  <meta name="description" content="毕设做的这个方向，被推荐了这个文章，感觉会有参考，来看一看~  
+####Abstract####
+这篇文章就是讲一个新词的生成算法的。这个新词会包含一些基于要起名字的service的类型或是属性的谐音双关(homophonic puns)或是隐喻(metaphors)。噢，好拗口，其实就是生成的新词要满足一定的含义要求。我们为这个新词的生成系统设计了很多语义学的方法，这篇文章就是介绍这些方法的。当然当然还有一些测试什么的。  
+第一次看这个领域的文章感觉好新鲜好神奇~看下去吧~">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="A Computational Approach to the Automation of Creative Naming"/>
+  <meta property="og:site_name" content="ShallWe Talk"/>
+
+  
+    <meta property="og:image" content=""/>
+  
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="ShallWe Talk" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">ShallWe Talk</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div>
+</header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2015-05-14T15:00:24.000Z"><a href="/2015/05/14/2015-05-14-a-computational-approach-to-the-automation-of-creative-naming/">2015-05-14</a></time>
+      
+      
+  
+    <h1 class="title">A Computational Approach to the Automation of Creative Naming</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>毕设做的这个方向，被推荐了这个文章，感觉会有参考，来看一看~  </p>
+<p>####Abstract####</p>
+<p>这篇文章就是讲一个新词的生成算法的。这个新词会包含一些基于要起名字的service的类型或是属性的谐音双关(homophonic puns)或是隐喻(metaphors)。噢，好拗口，其实就是生成的新词要满足一定的含义要求。我们为这个新词的生成系统设计了很多语义学的方法，这篇文章就是介绍这些方法的。当然当然还有一些测试什么的。  </p>
+<p>第一次看这个领域的文章感觉好新鲜好神奇~看下去吧~<br><a id="more"></a></p>
+<p>####1 Introduction####</p>
+<p>一个让人印象深刻的、有创意的名字是一个公司成功的关键。因为一个好的名字可以给人们带来一个好的印象，而且能够代表一个公司提供的服务。╮(╯▽╰)╭翻译不下去了，大概就是好名字很重要。然而要找一个好名字，你得理解别人公司的service，还得擅长跟单词玩耍~你看这事儿又重要又难，多么需要科学家来解决啊。  </p>
+<p>有人说，起名字既是艺术又是科学（这话说得太对了！）。尽管最后的输出结果是一个简简单单的名字，但是这个名字背后的技术是十分复杂的。  </p>
+<p>接下来这个paper的结构如下。首先会介绍一下现在与naming task有关的最新工作。然后会介绍一下一个叫annotation task的工作。然后回讲一下是怎么起名字的。最后分析一下效果总结总结展望展望未来。  </p>
+<p>####2 Related Work####</p>
+<p>在这个部分，我们会从三个方面分析最新的关于命名的工作：i)linguistic ii)computational iii)commercial  </p>
+<p>####2.1 Linguistic####</p>
+<p>以下这段就是介绍一些别人在语言学命名方面的工作的，不想看可以直接跳过。感觉太难翻译了。。。  </p>
+<p>大概就是些分析相关性、含义、发音，发音和含义的关系之类的。反正还不涉及自动生成，只是单纯在讲怎么起名字。  </p>
+<ul>
+<li>B.V.Bergh(1987)的工作是一个包括了phonetic, orthographic, morphological和linguistic的four-fold linguistic topology用于商标的命名（这个工作好老，我还么得出生呢）。</li>
+<li>Bao el al.(2008) investigat ed the effects of relevance, connotation, and pronunciation of brand names on preferences of consumers. </li>
+<li>Klink(2000) based his research on the area of sound symbo  lism (i.e. “the direct linkage between sound and meaning”(Leanne Hinton, 2006)) by investigating whether the sound of a brand name conveys an inherent mening and the findings showed that both vowels and iconsonants of brand names communicate information related to products when no marketing communications are avilable. </li>
+<li>Kohli et al.(2005) analyzed consumer evaluations of meaningful and nonmeaningful brand names and results suggested that non-meaningful brand names are evaluated less favorably than meaningful ones even after repeated exposure. </li>
+<li>Lastly, cog(2011) focused on the semantics of branding and based on the analysis of serveral international brand names, it was shown that cognitive operations such as domain reduction/expansion, mitigation, and strengthening might be used unconsciously while creating a new brand name.  </li>
+</ul>
+<p>####2.2 Computational####</p>
+<p>据本文作者们所知只有一篇关于computational的工作（computational大概就是自动生成缩略词这个意思吧 ）。  </p>
+<p>Stock和Strapparava(2006)提出了一种缩略词分析和生成（acronym ironic reanalyzer and generator）的工具叫HAHAcronym。这个系统make fun of已有的缩略词，也根据用户的输入生成一些有意思的缩略词。HAHAcronym主要基于词典替换(lexical substitution)。  </p>
+<p>还有一些更naive一些的做法就是直接开脑洞啦。<a href="http://www.bussiness-name-generators.com" target="_blank" rel="external">www.bussiness-name-generators.com</a>就是随机组合一些缩略词(abbreviations)、音节(syllables)还有一些来自不同领域的短词(short words)。<a href="http://www.namespace.com" target="_blank" rel="external">www.namestation.com</a>就是基于头韵(alliterations)、复合词(compound words)还有用户给出的单词表，随机生成一些单词和领域。用户可以决定生成名字的前缀和后缀。<a href="http://www.netsubstance.com" target="_blank" rel="external">www.netsubstance.com</a>给出的商标名称把一些关键词作为输入，用户可以选择有多少概率可以换掉关键词的单词。最后，<a href="http://www.naming.net" target="_blank" rel="external">www.naming.net</a>基于普通单词、希腊语还有拉丁语前缀后缀词根的结合。  </p>
+<p>这些自动生成系统的缺点是随机的生成结果可能会非常差，用户需要有足够的耐心找到他们想要的。另外，这些生成的结果都是单词的直接组合，并没有把语义考虑进来。  </p>
+<p>####2.3 Commercial####</p>
+<p>很多naming agencies和branding firms(例如<a href="http://www.eatmywords.com" target="_blank" rel="external">www.eatmywords.com</a>, <a href="http://www.designbridge.com" target="_blank" rel="external">www.designbridge.com</a>, <a href="http://www.ahundredmonkeys.com" target="_blank" rel="external">www.ahundredmonkeys.com</a>)都提供起名服务。这些服务需要用户提供他们需要起名的公司的简要信息，填一个关于他们业务市场、竞争对手还有一些展望的调查问卷。最后这些服务会提供给用户一个名称候选列表。尽管最终的名字可以非常令人满意，然而这些服务非常昂贵，而且需要的时间也很长。  </p>
+<p>总之就是这个东西挺有市场的。  </p>
+<p>####3 Dataset and Annotation####</p>
+<p>为了构建一个用语义生成名字的黄金标准，我们需要收集一些用于起名字的常规策略(common creativity devices)，然后设计一个自动生成机制决定合适的名称。我们针对一个有1000个来自不同领域的商标和公司名称的数据集进行了注释分析(annotation task，猜一下，就是给这些名字打个标签，看这些名字都是怎么产生的)。这些名字来自一本书还有各种网页(类似<a href="http://adslogans.co.uk" target="_blank" rel="external">adslogans.co.uk</a>还有<a href="http://brandsandtags.com" target="_blank" rel="external">brandsandtags.com</a>)。  </p>
+<p>这个列表中的名字包括了各种不同方法生成的名字。一些名字里的creativity与上下文无关，名字本身已经足够实现这些方法了，比如Peak PErformance这个名字用了头韵，vimeo这个名字更改了video这个名字的一个字母。对于另一些名字，与产品的形容和公司所属的领域有很大关系。例如，Thanks a Latte是一家咖啡店的名字，这里Latte与lot有谐音关系。在看Caterpillar这个名字，是一个运土机公司的名字，这里用到了隐喻的说法。因此，我们需要额外的信息。根据以上这些名字，我们从两个不同的分支对名字进行注释。一个是什么。。。。另一个是什么。。。尼玛看不懂。。不要紧继续看~  </p>
+<p>####4.1 Specifying the category and properties####</p>
+<p>要求category是名词，properties是形容词。比如category是car，properties是comfortable。然后就可以使用一些技术来扩展这些category和properties（原文中叫扩展ingredient list），得到更多的名字。  </p>
+<p>####4.2 Adding common sense knowledge####</p>
+<p>比如刚才定义了一个category是“shampoo”，那我们就要知道“它可以用来洗头发”或是“它一般放在浴室里”。为了做这件事情，有一个工具叫<a href="http://conceptnet5.media.mit.edu/" target="_blank" rel="external">ConceptNet</a>。这个工具把常识、文化、科普建成了一个语义网(semantic network)。对于每个单词，我们都可以用下表中的函数来查询一些含义。  </p>
+<p><img src="http://i766.photobucket.com/albums/xx304/mszxw999/QQ20150514145214.png" alt="ConceptNet relations"></p>
+<p>####4.3 Adding semantically related words####</p>
+<p>为了继续扩展ingredient list。我们使用了WordNet。这是一个英文的语法数据库。WordNet把单词分为名词、动词、形容词和副词，并把相同词性的同义词连接成一个synset。  </p>
+<p>我们使用一个单词在WordNet中的直接上位词(direct hypernym)作为它的类别。我们认为WordNet中的上位词比ConceptNet中的IsA关系要更好，因为后者往往会得到更一般的单词。而且WordNet是纯语义学的，而ConceptNet来自网页，有很多噪声。  </p>
+<p>####4.4 Retrieving metaphors####</p>
+<p>隐喻是一种中文中也有的修辞方法，应该很好了解，它是一种比喻，但是不用比喻词，把喻体直接当本体来用。既然是比喻，肯定本体和喻体之间要有某些共同点或是某种联系。这一节就是讲这种修辞的。  </p>
+<p>为了生成隐喻，我们从4.1节那些用户给出的properties开始，使用Veale在2011年给出的一个工作。（然后讲了些这个工作，我们就不关心了。）  </p>
+<p>我们方法中的一个组成是使用” as <property\> as <em> “的模式，这是” <property\> like </property\></em> “的扩展，后者是明喻的一种重要结构。对于一个给定的property，我们把这种格式放到Google Suggest的API里面搜索。然而可能只能得到前10个（或者更少）的suggestion。我们把a-z中的每个字母依次加到提供的短语(provided phrase)中，得到更多的suggestion（这是什么原理？）。然后我们就得到了很多喻体，为了删除噪音，我们把多个单词组成的喻体删掉。然后(Afterwards)，我们对剩下的候选词进行词性还原(lemmatization process)，只考虑在WordNet中认为是名词的那些。尽管我们能找到很多正确的暗喻(比如对于属性bright，找到sun, diamond, star, neon)，我们也会找到很多不相关的词（比如download, myspace, house）。因此，我们需要去掉这些不相关的词。  </property\></p>
+<p>为了去掉这些词，我们需要借助ConceptNet的帮助。去ConceptNet用HasProperty(*, property)查一下是不是真的这个名词有这个属性。有人就要问了，一开始就用ConceptNet不就行了么？我们告诉大家，这是不行的，也会带来很多噪音，比如对于属性bright，可能会查出blouse, idea, color, home-schooler这些词。  </p>
+<p>####4.5 Generating neologisms####</p>
+<p>当ingredient准备好了之后我们就需要来生成新词啦~首先phonetic(语音) module会分析所有的ingredient pairs看是否能产生谐音双关的新词。  </p>
+<p>为了分析这些ingredient的发音，我们使用了CMU Pronouncing Dictionary(Lenzo, 2007)。这个资源是一个机器可读的英语发音词典。然后就介绍了一下这个词典很厉害。把单词映射到了39种音位（<a href="http://en.wikipedia.org/wiki/Phonemic" target="_blank" rel="external">phonemes</a>）中。所谓音位就是语言中可以区别意思的语音最小单位。这里有个<a href="http://zuoye.baidu.com/question/ca84abd83e6754b91f6367d0d3efd3b9.html" target="_blank" rel="external">栗子</a>解释得还是比较到位的。然后我们做了一件事情，把同一类(same category)的phoneme(例如辅音p-b, t-d, s-z，元音i-y, e-ø)组成一个group。  </p>
+<p>现在我们认为所有ingredient list中的单词的发音都已经搞定了。短单词的发音还要与长单词的子串比较(compare against)一下。然后我们需要计算两个pronunciation string之间的距离，看他们究竟有多么相似。这里我们使用了<a href="http://en.wikipedia.org/wiki/Levenshtein_distance" target="_blank" rel="external">Levenshtein distance</a>(Levenshtein, 1966)。这个距离可以用来衡量两个sequences有多么不同。是怎么衡量的呢？就是看两个sequences之间的最小编辑距离。举个栗子，比如”kitten”和”sitting”之间的最小编辑距离就是3，kitten-&gt;sitten-&gt;sittin-&gt;sitting。对于刚才定义的在同一个phoneme group里的字母，我们在算距离的时候要giving a smaller penalty（这里我的理解是认为p和b这种的就不要认为还要编辑了，即认为p和b的编辑距离是0，或者不到1）。然后我们用pronunciation string的长度标准化(normalize)这个距离，只有当这个标准化之后的距离小于0.5（我们凭经验得来的）的距离得分，我们允许这种组合(allow the combination of word pairs)。  </p>
+<p>既然letter和phoneme之间没有one-to-one relationship，我们就不知道刚才配成对的两个读音来自哪两个单词。为了解决这个问题，我们使用了<a href="http://code.google.com/p/berkeleyaligner/" target="_blank" rel="external">Berkeley word aligner</a>来排列letters和phonemes。<a href="http://code.google.com/p/berkeleyaligner/" target="_blank" rel="external">Berkeley word aligner</a>是一个静态的机器翻译工具，它能够自动对齐单词与sentence-aligned parallel corpus中的翻译。  </p>
+<p>插播一段解释：parallel corpus是一个由大量<a href="http://en.wikipedia.org/wiki/Parallel_text" target="_blank" rel="external">parallel text</a>组成的语料库，所谓<a href="http://en.wikipedia.org/wiki/Parallel_text" target="_blank" rel="external">parallel text</a>就是包括文本和它的翻译的一个组合。这样解释就清楚了，所以这个<a href="http://code.google.com/p/berkeleyaligner/" target="_blank" rel="external">Berkeley word aligner</a>是用来做自动的机器翻译的。  </p>
+<p>为了使这个工具适应我们的需求，我们需要把我们字典中的单词都拆成字母，然后把这些字母与他们的phonemes对应(mapping)一下，这样<a href="http://code.google.com/p/berkeleyaligner/" target="_blank" rel="external">Berkeley word aligner</a>就可以自动对齐单词及其发音了。  </p>
+<p>然后我们会把两个单词的读音相同的公共部分拿出来，再与不相同的部分拼在一起。举个栗子，如果有一个ingredient是bright，还有一个ingredient是light，我们可能会生成一个叫blight的名字。  </p>
+<p>####4.6 Checking phonetic likelihood####</p>
+<p>为了检查替换过后新字符串的likelihood和well-formedness，我们学习了一个绝对平滑(absolute smoothing)的3-gram language model，为了学习这个language model，我们只考虑CMU发音词典和WordNet中共有的单词。进行这个过滤是为了去掉大量非英语的<a href="http://en.wikipedia.org/wiki/Trigram" target="_blank" rel="external">trigrams</a>。我们删除了包含至少一个trigram的单词。  </p>
+<p>####5 Evaluation####</p>
+<p>我们使用人造的注释(manual annotation翻译太烂，忽视掉)评估了我们系统的性能，这个manual annotation中有5个annotators从4个维度评估生成的新词(neologisms)：</p>
+<ol>
+<li>appropriateness，比如有几个ingredients被用来生产这个新词了  </li>
+<li>pleasantness，比如是不是符合英语的发音规则  </li>
+<li>humor/wittiness，这个并没有解释  </li>
+<li>success，比如是不是与目标分类或是属性有关  </li>
+</ol>
+<p>为了构造数据集，我们编辑了一个list，这个list里有50个分类，这个分类是根据WordNet中consumer goods这个synset(在WordNet中表示同一个概念的词)中选择了50个上位词得来的。  </p>
+<p>####6 Conclusion####</p>
+<p>####7 一段话概括这篇文章在做什么####</p>
+<p>这段就看图说话，我们看下面这张图，左边是输入，中间是一些比较成功的输出，右边是不太成功的输出。  </p>
+<p>比如对于输入的category，我们输入了一些properties用来形容bar，比如有irish, lively, wooden等等，根据这些properties，我们扩展了更多的ingredients，比如bartender, beer等，我们把这些ingredient两两比较，把读音有共同部分的组成一对，然后产生新名字，比如bartender和beer组成beertender。<br><img src="http://i766.photobucket.com/albums/xx304/mszxw999/blog/A%20Computational%20Approach%20to%20the%20Automation%20of%20Creative%20Naming.png" alt="A Computational Approach to the Automation of Creative Naming"></p>
+<p>好了这篇文章就算讲完了。有空再把evaluation和conclusion补全好了。  </p>
+
+      
+    </div>
+    <footer>
+      
+        
+  
+  <div class="categories">
+    <a href="/categories/paper/">paper</a>, <a href="/categories/paper/NLP/">NLP</a>
+  </div>
+
+        
+        
+  <div class="addthis addthis_toolbox addthis_default_style">
+    
+      <a class="addthis_button_facebook_like" fb:like:layout="button_count"></a>
+    
+    
+      <a class="addthis_button_tweet"></a>
+    
+    
+      <a class="addthis_button_google_plusone" g:plusone:size="medium"></a>
+    
+    
+      <a class="addthis_button_pinterest_pinit" pi:pinit:layout="horizontal"></a>
+    
+    <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js"></script>
+
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+<section id="comment">
+  <h1 class="title">Kommentare</h1>
+
+  
+      <div id="fb-root"></div>
+<script>
+  (function(d, s, id) {
+    var js, fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) return;
+    js = d.createElement(s); js.id = id;
+    js.src = "//connect.facebook.net/en_US/all.js#xfbml=1&appId=123456789012345";
+    fjs.parentNode.insertBefore(js, fjs);
+  }(document, 'script', 'facebook-jssdk'));
+</script>
+
+<div class="fb-comments" data-href="http://yoursite.com/2015/05/14/2015-05-14-a-computational-approach-to-the-automation-of-creative-naming/index.html" data-num-posts="5" data-width="840" data-colorscheme="light"></div>
+      
+  
+</section>
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="Suche">
+    <input type="hidden" name="q" value="site:yoursite.com">
+  </form>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">Kategorien</h3>
+  <ul class="entry">
+  
+    <li><a href="/categories/software-engineer/API/">API</a><small>1</small></li>
+  
+    <li><a href="/categories/Beijing/">Beijing</a><small>1</small></li>
+  
+    <li><a href="/categories/C语言学习笔记/">C语言学习笔记</a><small>1</small></li>
+  
+    <li><a href="/categories/leetcode/HashTable/">HashTable</a><small>1</small></li>
+  
+    <li><a href="/categories/source-code/JXIO/">JXIO</a><small>1</small></li>
+  
+    <li><a href="/categories/language/Japanese/">Japanese</a><small>2</small></li>
+  
+    <li><a href="/categories/paper/NLP/">NLP</a><small>1</small></li>
+  
+    <li><a href="/categories/Spark/RDD/">RDD</a><small>1</small></li>
+  
+    <li><a href="/categories/Security/">Security</a><small>1</small></li>
+  
+    <li><a href="/categories/Spark/">Spark</a><small>2</small></li>
+  
+    <li><a href="/categories/source-code/Spark/">Spark</a><small>5</small></li>
+  
+    <li><a href="/categories/leetcode/Two-Pointers/">Two Pointers</a><small>1</small></li>
+  
+    <li><a href="/categories/unity/UGUI/">UGUI</a><small>1</small></li>
+  
+    <li><a href="/categories/unity/animation/">animation</a><small>1</small></li>
+  
+    <li><a href="/categories/blog/">blog</a><small>3</small></li>
+  
+    <li><a href="/categories/coding/">coding</a><small>1</small></li>
+  
+    <li><a href="/categories/coding/compiler/">compiler</a><small>1</small></li>
+  
+    <li><a href="/categories/Spark/configuration/">configuration</a><small>1</small></li>
+  
+    <li><a href="/categories/leetcode/divide-and-conquer/">divide and conquer</a><small>1</small></li>
+  
+    <li><a href="/categories/dp/">dp</a><small>1</small></li>
+  
+    <li><a href="/categories/leetcode/dp/">dp</a><small>1</small></li>
+  
+    <li><a href="/categories/music/guitar/">guitar</a><small>1</small></li>
+  
+    <li><a href="/categories/language/">language</a><small>2</small></li>
+  
+    <li><a href="/categories/leetcode/">leetcode</a><small>9</small></li>
+  
+    <li><a href="/categories/language/Japanese/lyric/">lyric</a><small>1</small></li>
+  
+    <li><a href="/categories/mapreduce/">mapreduce</a><small>1</small></li>
+  
+    <li><a href="/categories/python/matplotlib/">matplotlib</a><small>1</small></li>
+  
+    <li><a href="/categories/music/">music</a><small>1</small></li>
+  
+    <li><a href="/categories/paper/">paper</a><small>2</small></li>
+  
+    <li><a href="/categories/programming-language/">programming language</a><small>1</small></li>
+  
+    <li><a href="/categories/python/">python</a><small>1</small></li>
+  
+    <li><a href="/categories/paper/scheduler/">scheduler</a><small>1</small></li>
+  
+    <li><a href="/categories/software-engineer/">software engineer</a><small>1</small></li>
+  
+    <li><a href="/categories/Spark/RDD/source-code/">source code</a><small>1</small></li>
+  
+    <li><a href="/categories/source-code/">source code</a><small>6</small></li>
+  
+    <li><a href="/categories/spark/">spark</a><small>2</small></li>
+  
+    <li><a href="/categories/unity/">unity</a><small>2</small></li>
+  
+  </ul>
+</div>
+
+
+  
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner">
+<div class="alignleft">
+  <script src="//dn-lbstatics.qbox.me/lbservice/busuanzi/2.0/busuanzi.mini.js"/></script>
+  <span id="busuanzi_container_site_uv">已经有<span id="busuanzi_value_site_uv"></span>人次访问carolz的小站啦 ( •̀ ω •́ )y</span>
+  <br /><br />
+  
+  &copy; 2017 6carol6
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>

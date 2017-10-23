@@ -1,0 +1,267 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Recent Performance Improvements in Apache Spark: SQL, Python, DataFrame, and More | ShallWe Talk</title>
+  <meta name="author" content="6carol6">
+  
+  <meta name="description" content="原文链接  
+在过去的一年（2014），spark的性能进行了大幅度的改进。spark创造了100TB排序的一个新的世界纪录，以三倍的速度打败了之前Hadoop MapReduce创造的记录，而且只用了十分之一的资源。然后还有spark拥有了一个新的SQL query engine，另外，很多build-in的算法都提速了五倍之多。  
+回到2010年，我们设计spark的初衷是为了解决MapReduce等批处理框架不擅长的交互式请求(interactive queries)和迭代算法(iterative algorithms)。现在，越来越多的用户因为spark的在这些方面的性能提升而开始使用spark。然而performance optimization is a never-ending processa。随着spark用户的增长，我们还会找更多可以提升性能的地方。以下就要讲一些已有的性能提升的点了。">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="Recent Performance Improvements in Apache Spark: SQL, Python, DataFrame, and More"/>
+  <meta property="og:site_name" content="ShallWe Talk"/>
+
+  
+    <meta property="og:image" content=""/>
+  
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="ShallWe Talk" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">ShallWe Talk</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div>
+</header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2015-09-24T14:27:07.000Z"><a href="/2015/09/24/2015-09-24-recent-performance-improvements-in-apache-spark/">2015-09-24</a></time>
+      
+      
+  
+    <h1 class="title">Recent Performance Improvements in Apache Spark: SQL, Python, DataFrame, and More</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p><a href="https://databricks.com/blog/2015/04/24/recent-performance-improvements-in-apache-spark-sql-python-dataframes-and-more.html" target="_blank" rel="external">原文链接</a>  </p>
+<p>在过去的一年（2014），spark的性能进行了大幅度的改进。spark创造了100TB排序的一个新的世界纪录，以三倍的速度打败了之前Hadoop MapReduce创造的记录，而且只用了十分之一的资源。然后还有spark拥有了一个新的SQL query engine，另外，很多build-in的算法都提速了五倍之多。  </p>
+<p>回到2010年，我们设计spark的初衷是为了解决MapReduce等批处理框架不擅长的交互式请求(interactive queries)和迭代算法(iterative algorithms)。现在，越来越多的用户因为spark的在这些方面的性能提升而开始使用spark。然而<strong>performance optimization is a never-ending processa</strong>。随着spark用户的增长，我们还会找更多可以提升性能的地方。以下就要讲一些已有的性能提升的点了。<br><a id="more"></a></p>
+<p>####Core Engine</p>
+<p>Spark的用户接口(user-facing APIs)(SQL, streaming, machine learning)都是跑在一个通用的core execution engine的，对这个core engine进行优化就能够使得所有组件的性能得到提升。我们经常可以看到一些很神奇的事情。比如，当core developer对Spark Streaming进行优化的时候，我们发现SQL queris的速度也快了原来的两倍(become two times faster)。  </p>
+<p>在2014年，在core engine部分最主要的提升在通信上。首先，<em>shuffle</em>是一个在机器之间需要互相传递数据的操作，它是几乎所有workload的基础。例如，一个SQL请求要用shuffle把两个数据源的数据连接到一起放到用一个机器上，还有使用一个比如ALS的推荐算法，也需要把数据在网络上传输。  </p>
+<p>最近的两个Spark的发布版建立了一个新的sort-based shuffle layer和一个新的基于Netty的zero-copy的network layer。这两个优化使得spark在large-scale workloads下的鲁棒性更好。这两个改变也正是spark能够打败hadoop的关键。  </p>
+<p>除了shuffle，core developers还重写了spark的广播原语(primitive)，使用了一个BitTorrent-like protocol来减少网络上的traffic。这个做法为需要给多个机器发送大参数的workloads提升了速度，包括SQL请求还有很多机器学习的算法。更多信息可以看<a href="https://github.com/apache/spark/pull/3417" target="_blank" rel="external">这里</a>。  </p>
+<p>####Python API(PySpark)</p>
+<p>Python可能是数据科学家(data scientists)中最流行的语言了。  </p>
+<p>Spark的core developers努力去降低Python和JVM之间性能的gap。特别的，PySpark可以运行在PyPy上，展现了PyPy just-in-time compiler的优势啊优势~反正主要思想就是让python更快不要拖后腿啊~  </p>
+<p>####SQL</p>
+<p>一年前，Shark，一个早期的在Spark engine上的基于Hive的SQL被不建议使用了。现在Databricks做了一个新的基于Catalyst(a new query optimizer)的query engine。这在Databricks是一件很有争议的事情，因为做一个query engine是需要极大的投资的。一年之后，超过115个open source contributors参加了这个project，使得Catalyst成为了one of the most active open source query engines.  </p>
+<p>Spark SQL比Shark做得好得多。  </p>
+<p>####Machine learning(MLlib) and Graph Computation(GraphX)</p>
+<p>反正就是提速了，没讲怎么提。  </p>
+<p>####DataFrames: Leveling the Field for Python and JVM</p>
+<p>在Spark1.3，我们加入了一个<a href="https://databricks.com/blog/2015/02/17/introducing-dataframes-in-spark-for-large-scale-data-science.html" target="_blank" rel="external">new DataFrame API</a>。这个API让Spark程序看起来更加简洁易懂。Spark可以用Catalyst去优化这些程序。  </p>
+<p>通过新的DataFrame API, Python程序也可以与JVM程序获得一样的性能了，因为Catalyst optimizer把DataFrame操作编译成了JVM的二进制代码。甚至有时候，这个性能会比手写的Scala代码还好。  </p>
+<p>Catalyst optimizer还会随着时间变得更智能，picking better logical optimizations and physical execution optimizations。例如，在将来，Spark will be able to leverage schema information to create a custom physical layout of data, 提高本地缓存、减少垃圾回收。这将会给Spark SQL和DataFrame programs带来好处。随着更多的libraries开始转而使用DataFrame API，他们也将从中受益得到优化。  </p>
+<p>Spark的目标是一同一个single platform，让用户能够得到最好效果的在任何数据处理上的分布式算法。我们将push the boundaries of performance，让Spark faster and more powerful for more users.  </p>
+<p>PS 感谢真三给我解释python和JVM之间的gap是怎么回事。  </p>
+
+      
+    </div>
+    <footer>
+      
+        
+  
+  <div class="categories">
+    <a href="/categories/spark/">spark</a>
+  </div>
+
+        
+        
+  <div class="addthis addthis_toolbox addthis_default_style">
+    
+      <a class="addthis_button_facebook_like" fb:like:layout="button_count"></a>
+    
+    
+      <a class="addthis_button_tweet"></a>
+    
+    
+      <a class="addthis_button_google_plusone" g:plusone:size="medium"></a>
+    
+    
+      <a class="addthis_button_pinterest_pinit" pi:pinit:layout="horizontal"></a>
+    
+    <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js"></script>
+
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+<section id="comment">
+  <h1 class="title">Kommentare</h1>
+
+  
+      <div id="fb-root"></div>
+<script>
+  (function(d, s, id) {
+    var js, fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) return;
+    js = d.createElement(s); js.id = id;
+    js.src = "//connect.facebook.net/en_US/all.js#xfbml=1&appId=123456789012345";
+    fjs.parentNode.insertBefore(js, fjs);
+  }(document, 'script', 'facebook-jssdk'));
+</script>
+
+<div class="fb-comments" data-href="http://yoursite.com/2015/09/24/2015-09-24-recent-performance-improvements-in-apache-spark/index.html" data-num-posts="5" data-width="840" data-colorscheme="light"></div>
+      
+  
+</section>
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="Suche">
+    <input type="hidden" name="q" value="site:yoursite.com">
+  </form>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">Kategorien</h3>
+  <ul class="entry">
+  
+    <li><a href="/categories/software-engineer/API/">API</a><small>1</small></li>
+  
+    <li><a href="/categories/Beijing/">Beijing</a><small>1</small></li>
+  
+    <li><a href="/categories/C语言学习笔记/">C语言学习笔记</a><small>1</small></li>
+  
+    <li><a href="/categories/leetcode/HashTable/">HashTable</a><small>1</small></li>
+  
+    <li><a href="/categories/source-code/JXIO/">JXIO</a><small>1</small></li>
+  
+    <li><a href="/categories/language/Japanese/">Japanese</a><small>2</small></li>
+  
+    <li><a href="/categories/paper/NLP/">NLP</a><small>1</small></li>
+  
+    <li><a href="/categories/Spark/RDD/">RDD</a><small>1</small></li>
+  
+    <li><a href="/categories/Security/">Security</a><small>1</small></li>
+  
+    <li><a href="/categories/Spark/">Spark</a><small>2</small></li>
+  
+    <li><a href="/categories/source-code/Spark/">Spark</a><small>5</small></li>
+  
+    <li><a href="/categories/leetcode/Two-Pointers/">Two Pointers</a><small>1</small></li>
+  
+    <li><a href="/categories/unity/UGUI/">UGUI</a><small>1</small></li>
+  
+    <li><a href="/categories/unity/animation/">animation</a><small>1</small></li>
+  
+    <li><a href="/categories/blog/">blog</a><small>3</small></li>
+  
+    <li><a href="/categories/coding/">coding</a><small>1</small></li>
+  
+    <li><a href="/categories/coding/compiler/">compiler</a><small>1</small></li>
+  
+    <li><a href="/categories/Spark/configuration/">configuration</a><small>1</small></li>
+  
+    <li><a href="/categories/leetcode/divide-and-conquer/">divide and conquer</a><small>1</small></li>
+  
+    <li><a href="/categories/dp/">dp</a><small>1</small></li>
+  
+    <li><a href="/categories/leetcode/dp/">dp</a><small>1</small></li>
+  
+    <li><a href="/categories/music/guitar/">guitar</a><small>1</small></li>
+  
+    <li><a href="/categories/language/">language</a><small>2</small></li>
+  
+    <li><a href="/categories/leetcode/">leetcode</a><small>9</small></li>
+  
+    <li><a href="/categories/language/Japanese/lyric/">lyric</a><small>1</small></li>
+  
+    <li><a href="/categories/mapreduce/">mapreduce</a><small>1</small></li>
+  
+    <li><a href="/categories/python/matplotlib/">matplotlib</a><small>1</small></li>
+  
+    <li><a href="/categories/music/">music</a><small>1</small></li>
+  
+    <li><a href="/categories/paper/">paper</a><small>2</small></li>
+  
+    <li><a href="/categories/programming-language/">programming language</a><small>1</small></li>
+  
+    <li><a href="/categories/python/">python</a><small>1</small></li>
+  
+    <li><a href="/categories/paper/scheduler/">scheduler</a><small>1</small></li>
+  
+    <li><a href="/categories/software-engineer/">software engineer</a><small>1</small></li>
+  
+    <li><a href="/categories/Spark/RDD/source-code/">source code</a><small>1</small></li>
+  
+    <li><a href="/categories/source-code/">source code</a><small>6</small></li>
+  
+    <li><a href="/categories/spark/">spark</a><small>2</small></li>
+  
+    <li><a href="/categories/unity/">unity</a><small>2</small></li>
+  
+  </ul>
+</div>
+
+
+  
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner">
+<div class="alignleft">
+  <script src="//dn-lbstatics.qbox.me/lbservice/busuanzi/2.0/busuanzi.mini.js"/></script>
+  <span id="busuanzi_container_site_uv">已经有<span id="busuanzi_value_site_uv"></span>人次访问carolz的小站啦 ( •̀ ω •́ )y</span>
+  <br /><br />
+  
+  &copy; 2017 6carol6
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>

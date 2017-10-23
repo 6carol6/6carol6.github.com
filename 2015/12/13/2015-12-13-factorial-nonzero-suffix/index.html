@@ -1,0 +1,326 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>求N!的后9位不为0的数 | ShallWe Talk</title>
+  <meta name="author" content="6carol6">
+  
+  <meta name="description" content="今天我们来讲一点轻松的事情。事情的经过是这样的，有一天carolz同学在开心地逛微博的时候，看到了一个消息：  
+
+【资讯】日本的IT人才求职网站paiza上公布了个免费美少女养成游戏叫《码农把妹（プログラミングで彼女をつくる）》，回答妹子提出的编程问题就能提高好感度，解开发型、服装、台词等道具……
+
+然后她就被岛国人民神(xiu)奇(chi)的创意给折服了。咦，这跟小时候玩的美少女换装游戏有什么不同呢？然后她默默地点开了链接。噢，一看就好想(xiu)玩(chi)哦。于是赶快注册了一个账号玩了起来。">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="求N!的后9位不为0的数"/>
+  <meta property="og:site_name" content="ShallWe Talk"/>
+
+  
+    <meta property="og:image" content=""/>
+  
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="ShallWe Talk" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">ShallWe Talk</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div>
+</header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2015-12-13T13:56:01.000Z"><a href="/2015/12/13/2015-12-13-factorial-nonzero-suffix/">2015-12-13</a></time>
+      
+      
+  
+    <h1 class="title">求N!的后9位不为0的数</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>今天我们来讲一点轻松的事情。事情的经过是这样的，有一天carolz同学在开心地逛微博的时候，看到了一个消息：  </p>
+<blockquote>
+<p>【资讯】日本的IT人才求职网站paiza上公布了个免费美少女养成游戏叫《码农把妹（プログラミングで彼女をつくる）》，回答妹子提出的编程问题就能提高好感度，解开发型、服装、台词等道具……</p>
+</blockquote>
+<p>然后她就被岛国人民神(xiu)奇(chi)的创意给折服了。咦，这跟小时候玩的美少女换装游戏有什么不同呢？然后她默默地点开了<a href="https://paiza.jp/poh/ando" target="_blank" rel="external">链接</a>。噢，一看就好想(xiu)玩(chi)哦。于是赶快注册了一个账号玩了起来。  </p>
+<a id="more"></a>
+<p>随便截个图给你们感受一下：</p>
+<p><img src="http://i766.photobucket.com/albums/xx304/mszxw999/QQ20151213220914.png" alt="paiza"></p>
+<p>顺便说一下：支持25种语言！25种！总有一款适合你。大约由于是免费体验版，题目难度都不太高，都是些a+b problem难度的题，给你体验一下这个游戏是怎么回事。当然主要的困难之处是在于语言不通（日语无能）。不过看看样例都能猜个大差不差，随便打打也就过去了。不一会儿她就碰到了最终关-水着！也就是泳装啦~【好羞耻。  </p>
+<p>想看妹子穿泳装，题目的画风都变得不一样了好么！光长度就比前面的problem都长好多了好么。但是大意就是说：  </p>
+<blockquote>
+<p>给一个正整数N(1&lt;=N&lt;=1000000)，求N!末尾不为0的9位数（艾玛，中文好简洁）。</p>
+</blockquote>
+<p>这里直接给大家截一下题目中举个栗子：  </p>
+<p><img src="http://i766.photobucket.com/albums/xx304/mszxw999/QQ20151213221856.png" alt="example"></p>
+<p>就是给了38的阶乘，然后去掉末尾0，然后删掉前面的保留最后9位，最后去掉前导零输出。  </p>
+<p>首先，直接求阶乘一定是会爆掉的。毕竟N会有10^6这么大。但是暴力赛高~于是我们决定写一个不那么暴力的暴力。我们设置i从1到N，每次乘以i之后都把结果末尾的0删去，然后对10^9取模。题目中给的样例都过了之后，提交！然后第一组数据就挂掉了（一共5组）。这是为什么捏？为什么捏？后来霞巨巨告诉我说，试试把一开始的模数改到10^10，最后对结果模10^9呢？然后我发现并没有什么卵用，依然没有数据过。但是霞巨巨的提醒是有道理的（道理我们等下再说），于是我决定模个10^11试试看。这么一试就过了。然后思考的时间就到了。是不是模10^11就够了呢？是不是因为数据弱所以过了呢？  </p>
+<p>让我们先回到为什么要先模一个大一点的数这个问题上。因为在计算的过程中我们可能会突然乘到一个因数含有5的幂的数，记为C*5^a（其中C不能被5整除）。由于在N!中，2的幂一定比5的幂多。因此乘积一定会比乘之前的结果在末尾上多a个0。由于这些0是要被删去的，一旦相乘之后多出来的位数不够补删去的0的个数，结果就会出错。  </p>
+<p>举个栗子，比如我们算390625!，即(5^8)!，乘到390625的时候，肯定比390624!的结果后面多8个0。若我们对390624!的结果去末尾0后保留后9位，记为S，那么390625*S至少会比S多出5位。因此，390625*S至少有9+5=14位。而这14位中，后8位都是0，是要被删掉的，只剩下14-8=6位数了，于是精度遭受了极大的打击，结果就错掉了。于是我们要在计算中间结果的时候多保留几位以避免这种情况的发生。那么保留多少位合适呢？保留太多了可是要爆精度的。我们可以根据题中N的范围来算一算。易见，末尾0的个数只跟因数中5的次幂有关，所以我们把10^6以内所有5的幂都列出来：</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">幂</th>
+<th style="text-align:left">指数(末尾多出的0的个数)</th>
+<th style="text-align:left">乘以S至少比S多几位</th>
+<th style="text-align:left">二者差</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">5</td>
+<td style="text-align:left">1</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">1</td>
+</tr>
+<tr>
+<td style="text-align:left">25</td>
+<td style="text-align:left">2</td>
+<td style="text-align:left">1</td>
+<td style="text-align:left">1</td>
+</tr>
+<tr>
+<td style="text-align:left">125</td>
+<td style="text-align:left">3</td>
+<td style="text-align:left">2</td>
+<td style="text-align:left">1</td>
+</tr>
+<tr>
+<td style="text-align:left">625</td>
+<td style="text-align:left">4</td>
+<td style="text-align:left">2</td>
+<td style="text-align:left">2</td>
+</tr>
+<tr>
+<td style="text-align:left">3125</td>
+<td style="text-align:left">5</td>
+<td style="text-align:left">3</td>
+<td style="text-align:left">2</td>
+</tr>
+<tr>
+<td style="text-align:left">15625</td>
+<td style="text-align:left">6</td>
+<td style="text-align:left">4</td>
+<td style="text-align:left">2</td>
+</tr>
+<tr>
+<td style="text-align:left">78125</td>
+<td style="text-align:left">7</td>
+<td style="text-align:left">4</td>
+<td style="text-align:left">3</td>
+</tr>
+<tr>
+<td style="text-align:left">390625</td>
+<td style="text-align:left">8</td>
+<td style="text-align:left">5</td>
+<td style="text-align:left">3</td>
+</tr>
+</tbody>
+</table>
+<p>因此我们知道了需要至少为中间结果多保留3位才不会出错。因此中间结果的模数是10^(9+3)=10^12。然后稍微看一下用10^12乘以最大的N，即10^6刚好是10^18不会爆long long。艾玛简直完美。于是问题就解决了。  </p>
+<p>代码就贴在后面了，泳装的图我就不贴了，想看自己去打题吧~祝大家好运。  </p>
+<figure class="highlight c"><figcaption><span>++</span></figcaption><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></div><div class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</div><div class="line"><span class="keyword">long</span> <span class="keyword">long</span> ans = <span class="number">1</span>;</div><div class="line"><span class="keyword">long</span> <span class="keyword">long</span> mod9 = <span class="number">1000000000</span>; </div><div class="line"><span class="keyword">long</span> <span class="keyword">long</span> mod12 = <span class="number">1000000000000</span>;</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span>&#123;</div><div class="line">    <span class="keyword">int</span> n;</div><div class="line">    <span class="built_in">cin</span> &gt;&gt; n;</div><div class="line">    <span class="keyword">for</span>(<span class="keyword">long</span> <span class="keyword">long</span> i = <span class="number">1</span>; i&lt;=n; i++)&#123;</div><div class="line">        ans *= i;</div><div class="line">        <span class="keyword">while</span>(ans%<span class="number">10</span> == <span class="number">0</span>) ans /= <span class="number">10</span>;</div><div class="line">        ans %= mod12;</div><div class="line">    &#125;</div><div class="line">    ans %= mod9;</div><div class="line">    <span class="built_in">cout</span> &lt;&lt; ans &lt;&lt; <span class="built_in">endl</span>;</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>当然你如果发现窝写的不对，请及时告诉窝！【我才不会说其实数据很弱我已经看到泳装了呢。  </p>
+<p>谢谢大家~【谢幕  </p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+        
+  <div class="addthis addthis_toolbox addthis_default_style">
+    
+      <a class="addthis_button_facebook_like" fb:like:layout="button_count"></a>
+    
+    
+      <a class="addthis_button_tweet"></a>
+    
+    
+      <a class="addthis_button_google_plusone" g:plusone:size="medium"></a>
+    
+    
+      <a class="addthis_button_pinterest_pinit" pi:pinit:layout="horizontal"></a>
+    
+    <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js"></script>
+
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+<section id="comment">
+  <h1 class="title">Kommentare</h1>
+
+  
+      <div id="fb-root"></div>
+<script>
+  (function(d, s, id) {
+    var js, fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) return;
+    js = d.createElement(s); js.id = id;
+    js.src = "//connect.facebook.net/en_US/all.js#xfbml=1&appId=123456789012345";
+    fjs.parentNode.insertBefore(js, fjs);
+  }(document, 'script', 'facebook-jssdk'));
+</script>
+
+<div class="fb-comments" data-href="http://yoursite.com/2015/12/13/2015-12-13-factorial-nonzero-suffix/index.html" data-num-posts="5" data-width="840" data-colorscheme="light"></div>
+      
+  
+</section>
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="Suche">
+    <input type="hidden" name="q" value="site:yoursite.com">
+  </form>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">Kategorien</h3>
+  <ul class="entry">
+  
+    <li><a href="/categories/software-engineer/API/">API</a><small>1</small></li>
+  
+    <li><a href="/categories/Beijing/">Beijing</a><small>1</small></li>
+  
+    <li><a href="/categories/C语言学习笔记/">C语言学习笔记</a><small>1</small></li>
+  
+    <li><a href="/categories/leetcode/HashTable/">HashTable</a><small>1</small></li>
+  
+    <li><a href="/categories/source-code/JXIO/">JXIO</a><small>1</small></li>
+  
+    <li><a href="/categories/language/Japanese/">Japanese</a><small>2</small></li>
+  
+    <li><a href="/categories/paper/NLP/">NLP</a><small>1</small></li>
+  
+    <li><a href="/categories/Spark/RDD/">RDD</a><small>1</small></li>
+  
+    <li><a href="/categories/Security/">Security</a><small>1</small></li>
+  
+    <li><a href="/categories/Spark/">Spark</a><small>2</small></li>
+  
+    <li><a href="/categories/source-code/Spark/">Spark</a><small>5</small></li>
+  
+    <li><a href="/categories/leetcode/Two-Pointers/">Two Pointers</a><small>1</small></li>
+  
+    <li><a href="/categories/unity/UGUI/">UGUI</a><small>1</small></li>
+  
+    <li><a href="/categories/unity/animation/">animation</a><small>1</small></li>
+  
+    <li><a href="/categories/blog/">blog</a><small>3</small></li>
+  
+    <li><a href="/categories/coding/">coding</a><small>1</small></li>
+  
+    <li><a href="/categories/coding/compiler/">compiler</a><small>1</small></li>
+  
+    <li><a href="/categories/Spark/configuration/">configuration</a><small>1</small></li>
+  
+    <li><a href="/categories/leetcode/divide-and-conquer/">divide and conquer</a><small>1</small></li>
+  
+    <li><a href="/categories/dp/">dp</a><small>1</small></li>
+  
+    <li><a href="/categories/leetcode/dp/">dp</a><small>1</small></li>
+  
+    <li><a href="/categories/music/guitar/">guitar</a><small>1</small></li>
+  
+    <li><a href="/categories/language/">language</a><small>2</small></li>
+  
+    <li><a href="/categories/leetcode/">leetcode</a><small>9</small></li>
+  
+    <li><a href="/categories/language/Japanese/lyric/">lyric</a><small>1</small></li>
+  
+    <li><a href="/categories/mapreduce/">mapreduce</a><small>1</small></li>
+  
+    <li><a href="/categories/python/matplotlib/">matplotlib</a><small>1</small></li>
+  
+    <li><a href="/categories/music/">music</a><small>1</small></li>
+  
+    <li><a href="/categories/paper/">paper</a><small>2</small></li>
+  
+    <li><a href="/categories/programming-language/">programming language</a><small>1</small></li>
+  
+    <li><a href="/categories/python/">python</a><small>1</small></li>
+  
+    <li><a href="/categories/paper/scheduler/">scheduler</a><small>1</small></li>
+  
+    <li><a href="/categories/software-engineer/">software engineer</a><small>1</small></li>
+  
+    <li><a href="/categories/Spark/RDD/source-code/">source code</a><small>1</small></li>
+  
+    <li><a href="/categories/source-code/">source code</a><small>6</small></li>
+  
+    <li><a href="/categories/spark/">spark</a><small>2</small></li>
+  
+    <li><a href="/categories/unity/">unity</a><small>2</small></li>
+  
+  </ul>
+</div>
+
+
+  
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner">
+<div class="alignleft">
+  <script src="//dn-lbstatics.qbox.me/lbservice/busuanzi/2.0/busuanzi.mini.js"/></script>
+  <span id="busuanzi_container_site_uv">已经有<span id="busuanzi_value_site_uv"></span>人次访问carolz的小站啦 ( •̀ ω •́ )y</span>
+  <br /><br />
+  
+  &copy; 2017 6carol6
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>

@@ -1,0 +1,379 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Running Spark on Mesos | ShallWe Talk</title>
+  <meta name="author" content="6carol6">
+  
+  <meta name="description" content="mesos version: 0.21.0spark version: 1.6.0OS version: CentOS 7.1.1053查看操作系统版本：lsb_release -a  
+我们根据Mesos官网和spark官网的说法进行配置。  
+####Mesos的安装
+首先是mesos的安装（这里我们默认spark已经装好啦）。这一部分主要根据这里来完成，我们把中间遇到的一些小问题都记录下来。我们找到spark1.6.0的对应mesos版本是0.21.0，然后就去mesos官网下载，解压：">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="Running Spark on Mesos"/>
+  <meta property="og:site_name" content="ShallWe Talk"/>
+
+  
+    <meta property="og:image" content=""/>
+  
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="ShallWe Talk" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">ShallWe Talk</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div>
+</header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2016-05-31T15:57:46.000Z"><a href="/2016/05/31/2016-05-31-running-spark-on-mesos/">2016-05-31</a></time>
+      
+      
+  
+    <h1 class="title">Running Spark on Mesos</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>mesos version: 0.21.0<br>spark version: 1.6.0<br>OS version: CentOS 7.1.1053<br>查看操作系统版本：lsb_release -a  </p>
+<p>我们根据<a href="http://mesos.apache.org/gettingstarted/" target="_blank" rel="external">Mesos官网</a>和<a href="https://spark.apache.org/docs/latest/running-on-mesos.html" target="_blank" rel="external">spark官网</a>的说法进行配置。  </p>
+<p>####Mesos的安装</p>
+<p>首先是mesos的安装（这里我们默认spark已经装好啦）。这一部分主要根据<a href="http://mesos.apache.org/gettingstarted/" target="_blank" rel="external">这里</a>来完成，我们把中间遇到的一些小问题都记录下来。我们找到spark1.6.0的对应mesos版本是0.21.0，然后就去mesos官网下载，解压：  </p>
+<a id="more"></a>
+<pre><code>$ tar -zxf mesos-0.28.1.tar.gz
+</code></pre><p>解压好之后不要忙着编译，先要准备好一些包，Mesos官网上都有讲，我们是CentOS 7.1，按照以下步骤做：</p>
+<pre><code># Install a few utility tools
+$ sudo yum install -y tar wget git
+
+# Fetch the Apache Maven repo file.
+$ sudo wget http://repos.fedorapeople.org/repos/dchen/apache-maven/epel-apache-maven.repo -O /etc/yum.repos.d/epel-apache-maven.repo
+
+# Install the EPEL repo so that we can pull in &apos;libserf-1&apos; as part of our
+# subversion install below.
+$ sudo yum install -y epel-release
+
+# &apos;Mesos &gt; 0.21.0&apos; requires &apos;subversion &gt; 1.8&apos; devel package,
+# which is not available in the default repositories.
+# Create a WANdisco SVN repo file to install the correct version:
+$ sudo cat &gt; /etc/yum.repos.d/wandisco-svn.repo &lt;&lt;EOF
+[WANdiscoSVN]
+name=WANdisco SVN Repo 1.9
+enabled=1
+baseurl=http://opensource.wandisco.com/centos/7/svn-1.9/RPMS/$basearch/
+gpgcheck=1
+gpgkey=http://opensource.wandisco.com/RPM-GPG-KEY-WANdisco
+EOF
+
+# Parts of Mesos require systemd in order to operate. However, Mesos
+# only supports versions of systemd that contain the &apos;Delegate&apos; flag.
+# This flag was first introduced in &apos;systemd version 218&apos;, which is
+# lower than the default version installed by centos. Luckily, centos
+# 7.1 has a patched &apos;systemd &lt; 218&apos; that contains the &apos;Delegate&apos; flag.
+# Explicity update systemd to this patched version.
+$ sudo yum update systemd
+
+# Install essential development tools.
+$ sudo yum groupinstall -y &quot;Development Tools&quot;
+
+# Install other Mesos dependencies.
+$ sudo yum install -y apache-maven python-devel java-1.8.0-openjdk-devel zlib-devel libcurl-devel openssl-devel cyrus-sasl-devel cyrus-sasl-md5 apr-devel subversion-devel apr-util-devel
+</code></pre><p>在做最后一步的时候遇到了一个错误</p>
+<pre><code>Transaction check error:
+file /usr/lib64/libsvn_client-1.so.0.0.0 from install of subversion-1.9.4-1.x86_64 conflicts with file from package subversion-libs-1.7.14-6.el7.x86_64
+file /usr/lib64/libsvn_delta-1.so.0.0.0 from install of subversion-1.9.4-1.x86_64 conflicts with file from package subversion-libs-1.7.14-6.el7.x86_64
+file /usr/lib64/libsvn_diff-1.so.0.0.0 from install of subversion-1.9.4-1.x86_64 conflicts with file from package subversion-libs-1.7.14-6.el7.x86_64
+file /usr/lib64/libsvn_fs-1.so.0.0.0 from install of subversion-1.9.4-1.x86_64 conflicts with file from package subversion-libs-1.7.14-6.el7.x86_64
+file /usr/lib64/libsvn_fs_base-1.so.0.0.0 from install of subversion-1.9.4-1.x86_64 conflicts with file from package subversion-libs-1.7.14-6.el7.x86_64
+file /usr/lib64/libsvn_fs_fs-1.so.0.0.0 from install of subversion-1.9.4-1.x86_64 conflicts with file from package subversion-libs-1.7.14-6.el7.x86_64
+file /usr/lib64/libsvn_fs_util-1.so.0.0.0 from install of subversion-1.9.4-1.x86_64 conflicts with file from package subversion-libs-1.7.14-6.el7.x86_64
+file /usr/lib64/libsvn_ra-1.so.0.0.0 from install of subversion-1.9.4-1.x86_64 conflicts with file from package subversion-libs-1.7.14-6.el7.x86_64
+file /usr/lib64/libsvn_ra_local-1.so.0.0.0 from install of subversion-1.9.4-1.x86_64 conflicts with file from package subversion-libs-1.7.14-6.el7.x86_64
+file /usr/lib64/libsvn_ra_svn-1.so.0.0.0 from install of subversion-1.9.4-1.x86_64 conflicts with file from package subversion-libs-1.7.14-6.el7.x86_64
+file /usr/lib64/libsvn_repos-1.so.0.0.0 from install of subversion-1.9.4-1.x86_64 conflicts with file from package subversion-libs-1.7.14-6.el7.x86_64
+file /usr/lib64/libsvn_subr-1.so.0.0.0 from install of subversion-1.9.4-1.x86_64 conflicts with file from package subversion-libs-1.7.14-6.el7.x86_64
+file /usr/lib64/libsvn_wc-1.so.0.0.0 from install of subversion-1.9.4-1.x86_64 conflicts with file from package subversion-libs-1.7.14-6.el7.x86_64
+</code></pre><p>大概意思是新版本和旧版本冲突啦。我们看mesos官网说<code>&#39;Mesos &gt; 0.21.0&#39; requires &#39;subversion &gt; 1.8&#39; devel package</code>，所以明显旧的1.7是不能用的，我们把它删掉，再重新执行最后一句：</p>
+<pre><code>$ sudo yum remove subversion-libs-1.7.14-6.el7.x86_64
+</code></pre><p>然后就是编译啦：</p>
+<pre><code># Change working directory.
+$ cd mesos
+
+# Bootstrap (Only required if building from git repository).
+$ ./bootstrap
+
+# Configure and build.
+$ mkdir build
+$ cd build
+$ ../configure
+$ make
+$ make install
+</code></pre><p>正当carolz准备开心地<code>make</code>的时候，又报错了（一个大写的心塞）：  </p>
+<pre><code>cd .. &amp;&amp; /bin/sh /home/master/mesos-0.21.0/missing automake-1.14 --foreign
+/home/master/mesos-0.21.0/missing: line 81: automake-1.14: command not found
+WARNING: &apos;automake-1.14&apos; is missing on your system.
+        You should only need it if you modified &apos;Makefile.am&apos; or
+        &apos;configure.ac&apos; or m4 files included by &apos;configure.ac&apos;.
+        The &apos;automake&apos; program is part of the GNU Automake package:
+        &lt;http://www.gnu.org/software/automake&gt;
+        It also requires GNU Autoconf, GNU m4 and Perl in order to run:
+        &lt;http://www.gnu.org/software/autoconf&gt;
+        &lt;http://www.gnu.org/software/m4/&gt;
+        &lt;http://www.perl.org/&gt;
+make: *** [../Makefile.in] Error 1
+</code></pre><p>看了一下自己的automake是1.13的，好吧，卸了它！1.14装起来~  </p>
+<pre><code>yum remove automake
+wget ftp://ftp.gnu.org/gnu/automake/automake-1.14.tar.gz
+tar xvf automake-1.14.tar.gz
+cd automake-1.14
+../configure --prefix=/usr --docdir=/usr/share/doc/automake-1.14
+make
+make install
+</code></pre><p>装好之后再按照上面的步骤重新装mesos。  </p>
+<p>在集群上的每一个节点都安装好mesos之后，就可以按照下面做一个测试，看看是不是搭好啦：  </p>
+<pre><code># Change into build directory.
+$ cd build
+
+# Start mesos master (Ensure work directory exists and has proper permissions).
+$ ./bin/mesos-master.sh --ip=127.0.0.1 --work_dir=/var/lib/mesos
+
+# Start mesos slave.
+$ ./bin/mesos-slave.sh --master=127.0.0.1:5050
+
+# Visit the mesos web page.
+$ http://127.0.0.1:5050
+
+# Run C++ framework (Exits after successfully running some tasks.).
+$ ./src/test-framework --master=127.0.0.1:5050
+
+# Run Java framework (Exits after successfully running some tasks.).
+$ ./src/examples/java/test-framework 127.0.0.1:5050
+
+# Run Python framework (Exits after successfully running some tasks.).
+$ ./src/examples/python/test-framework 127.0.0.1:5050
+</code></pre><p>别忘了把<code>--ip</code>换成你master的ip地址，把<code>--work_dir</code>换成你mesos的安装路径。  </p>
+<p>然后我们就能在<code>http://master_ip:5050</code>看到整个集群里的资源情况了。到此为止，mesos的部分就结束了，接下来我们要把spark和mesos关联起来。  </p>
+<p>关于如何方便地用集群启动mesos可以参考<a href="http://www.litrin.net/2015/08/20/mesos%E5%AE%9E%E6%88%98/" target="_blank" rel="external">这里</a>，我们就不细说了。  </p>
+<p>####Running Spark on Mesos (client mode)</p>
+<p>这一部分主要参考<a href="https://spark.apache.org/docs/latest/running-on-mesos.html" target="_blank" rel="external">这里</a>。  </p>
+<p>首先我们要把mesos的动态链接库的位置告诉spark（这个动态链接库的具体位置需要自己<code>find</code>一下，<code>find -name</code>大法好），在spark目录下的<code>conf/spark_env.sh</code>有这个设置：  </p>
+<pre><code>MESOS_NATIVE_JAVA_LIBRARY=/home/master/mesos-0.21.0/build/src/.libs/libmesos.so
+</code></pre><p>然后正常启动mesos，启动spark，把spark运行时候的<code>spark://master_ip:port</code>改成<code>mesos://master_ip:5050</code>就行啦。运行一个application，打开你的浏览器，输入<code>master_ip:5050</code>欣赏劳动成果吧~  </p>
+<p>####Running Spark on Mesos (cluster mode)</p>
+<p>参考文献跟上一个部分是同一篇啦。需要注意的是在编译spark的时候需要</p>
+<pre><code>./make_distributed.sh --tgz
+</code></pre><p>生成一个binary package。上传到hdfs上。配置文件要在这之前写好，不然的话executor读不到。（因为executor是从hdfs上下载的啊！）不然可能会出现命名什么都设置好了却<code>JAVA_HOME is not set</code>的尴尬情况。</p>
+<p>具体的配置文件参考<a href="https://github.com/6carol6/etc" target="_blank" rel="external">这里</a>，你可以能需要根据你的操作系统和选择的master对IP地址做一些修改。</p>
+<p>####关于Mesos的sandbox</p>
+<p>Mesos在运行的时候，可以从WebUI上看到每个节点的stdout和stderr，这个文件在哪里呢？从<a href="http://mesos.apache.org/documentation/latest/sandbox/" target="_blank" rel="external">这里</a>可以找到答案。</p>
+<p>####Reference</p>
+<p>这次的参考文献非常少，就那么两个官网，鞠躬谢幕~  </p>
+<p>[1] <a href="http://mesos.apache.org/gettingstarted/" target="_blank" rel="external">http://mesos.apache.org/gettingstarted/</a><br>[2] <a href="https://spark.apache.org/docs/latest/running-on-mesos.html" target="_blank" rel="external">https://spark.apache.org/docs/latest/running-on-mesos.html</a><br>[3] <a href="http://www.litrin.net/2015/08/20/mesos%E5%AE%9E%E6%88%98/" target="_blank" rel="external">http://www.litrin.net/2015/08/20/mesos%E5%AE%9E%E6%88%98/</a>  </p>
+
+      
+    </div>
+    <footer>
+      
+        
+  
+  <div class="categories">
+    <a href="/categories/Spark/">Spark</a>, <a href="/categories/Spark/configuration/">configuration</a>
+  </div>
+
+        
+        
+  <div class="addthis addthis_toolbox addthis_default_style">
+    
+      <a class="addthis_button_facebook_like" fb:like:layout="button_count"></a>
+    
+    
+      <a class="addthis_button_tweet"></a>
+    
+    
+      <a class="addthis_button_google_plusone" g:plusone:size="medium"></a>
+    
+    
+      <a class="addthis_button_pinterest_pinit" pi:pinit:layout="horizontal"></a>
+    
+    <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js"></script>
+
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+<section id="comment">
+  <h1 class="title">Kommentare</h1>
+
+  
+      <div id="fb-root"></div>
+<script>
+  (function(d, s, id) {
+    var js, fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) return;
+    js = d.createElement(s); js.id = id;
+    js.src = "//connect.facebook.net/en_US/all.js#xfbml=1&appId=123456789012345";
+    fjs.parentNode.insertBefore(js, fjs);
+  }(document, 'script', 'facebook-jssdk'));
+</script>
+
+<div class="fb-comments" data-href="http://yoursite.com/2016/05/31/2016-05-31-running-spark-on-mesos/index.html" data-num-posts="5" data-width="840" data-colorscheme="light"></div>
+      
+  
+</section>
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="Suche">
+    <input type="hidden" name="q" value="site:yoursite.com">
+  </form>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">Kategorien</h3>
+  <ul class="entry">
+  
+    <li><a href="/categories/software-engineer/API/">API</a><small>1</small></li>
+  
+    <li><a href="/categories/Beijing/">Beijing</a><small>1</small></li>
+  
+    <li><a href="/categories/C语言学习笔记/">C语言学习笔记</a><small>1</small></li>
+  
+    <li><a href="/categories/leetcode/HashTable/">HashTable</a><small>1</small></li>
+  
+    <li><a href="/categories/source-code/JXIO/">JXIO</a><small>1</small></li>
+  
+    <li><a href="/categories/language/Japanese/">Japanese</a><small>2</small></li>
+  
+    <li><a href="/categories/paper/NLP/">NLP</a><small>1</small></li>
+  
+    <li><a href="/categories/Spark/RDD/">RDD</a><small>1</small></li>
+  
+    <li><a href="/categories/Security/">Security</a><small>1</small></li>
+  
+    <li><a href="/categories/Spark/">Spark</a><small>2</small></li>
+  
+    <li><a href="/categories/source-code/Spark/">Spark</a><small>5</small></li>
+  
+    <li><a href="/categories/leetcode/Two-Pointers/">Two Pointers</a><small>1</small></li>
+  
+    <li><a href="/categories/unity/UGUI/">UGUI</a><small>1</small></li>
+  
+    <li><a href="/categories/unity/animation/">animation</a><small>1</small></li>
+  
+    <li><a href="/categories/blog/">blog</a><small>3</small></li>
+  
+    <li><a href="/categories/coding/">coding</a><small>1</small></li>
+  
+    <li><a href="/categories/coding/compiler/">compiler</a><small>1</small></li>
+  
+    <li><a href="/categories/Spark/configuration/">configuration</a><small>1</small></li>
+  
+    <li><a href="/categories/leetcode/divide-and-conquer/">divide and conquer</a><small>1</small></li>
+  
+    <li><a href="/categories/dp/">dp</a><small>1</small></li>
+  
+    <li><a href="/categories/leetcode/dp/">dp</a><small>1</small></li>
+  
+    <li><a href="/categories/music/guitar/">guitar</a><small>1</small></li>
+  
+    <li><a href="/categories/language/">language</a><small>2</small></li>
+  
+    <li><a href="/categories/leetcode/">leetcode</a><small>9</small></li>
+  
+    <li><a href="/categories/language/Japanese/lyric/">lyric</a><small>1</small></li>
+  
+    <li><a href="/categories/mapreduce/">mapreduce</a><small>1</small></li>
+  
+    <li><a href="/categories/python/matplotlib/">matplotlib</a><small>1</small></li>
+  
+    <li><a href="/categories/music/">music</a><small>1</small></li>
+  
+    <li><a href="/categories/paper/">paper</a><small>2</small></li>
+  
+    <li><a href="/categories/programming-language/">programming language</a><small>1</small></li>
+  
+    <li><a href="/categories/python/">python</a><small>1</small></li>
+  
+    <li><a href="/categories/paper/scheduler/">scheduler</a><small>1</small></li>
+  
+    <li><a href="/categories/software-engineer/">software engineer</a><small>1</small></li>
+  
+    <li><a href="/categories/Spark/RDD/source-code/">source code</a><small>1</small></li>
+  
+    <li><a href="/categories/source-code/">source code</a><small>6</small></li>
+  
+    <li><a href="/categories/spark/">spark</a><small>2</small></li>
+  
+    <li><a href="/categories/unity/">unity</a><small>2</small></li>
+  
+  </ul>
+</div>
+
+
+  
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner">
+<div class="alignleft">
+  <script src="//dn-lbstatics.qbox.me/lbservice/busuanzi/2.0/busuanzi.mini.js"/></script>
+  <span id="busuanzi_container_site_uv">已经有<span id="busuanzi_value_site_uv"></span>人次访问carolz的小站啦 ( •̀ ω •́ )y</span>
+  <br /><br />
+  
+  &copy; 2017 6carol6
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>

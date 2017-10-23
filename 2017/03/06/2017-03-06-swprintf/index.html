@@ -1,0 +1,276 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>来聊一聊C++的string | ShallWe Talk</title>
+  <meta name="author" content="6carol6">
+  
+  <meta name="description" content="咦，好久没更新博客了。我都在干嘛呢。嗯这是个好问题。最近（其实已经是两个月以前的事情了）看DX的时候遇到了一些字符串转换的问题，感觉比较麻烦，不如一次查清楚分享出来啦（博主真是个好人）。
+首先看看维基百科关于C string handling的词条说在C语言里的string分两种：一种叫string(也可以叫byte string)是以char为单位构成的，另一种叫wide string，是以wchar_t为单位构成的，两者都以&amp;#39;\0&amp;#39;结尾。我们的讨论就围绕这两种string以及它们之间的转换来进行。">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="来聊一聊C++的string"/>
+  <meta property="og:site_name" content="ShallWe Talk"/>
+
+  
+    <meta property="og:image" content=""/>
+  
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="ShallWe Talk" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">ShallWe Talk</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div>
+</header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2017-03-06T15:34:05.000Z"><a href="/2017/03/06/2017-03-06-swprintf/">2017-03-06</a></time>
+      
+      
+  
+    <h1 class="title">来聊一聊C++的string</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>咦，好久没更新博客了。我都在干嘛呢。嗯这是个好问题。最近（其实已经是两个月以前的事情了）看DX的时候遇到了一些字符串转换的问题，感觉比较麻烦，不如一次查清楚分享出来啦（博主真是个好人）。</p>
+<p>首先看看维基百科关于<a href="https://en.wikipedia.org/wiki/C_string_handling" target="_blank" rel="external">C string handling</a>的词条说在C语言里的string分两种：一种叫<strong>string</strong>(也可以叫byte string)是以<code>char</code>为单位构成的，另一种叫<strong>wide string</strong>，是以<code>wchar_t</code>为单位构成的，两者都以<code>&#39;\0&#39;</code>结尾。我们的讨论就围绕这两种string以及它们之间的转换来进行。</p>
+<a id="more"></a>
+<h3 id="char和wchar-t"><a href="#char和wchar-t" class="headerlink" title="char和wchar_t"></a>char和wchar_t</h3><p><code>char</code>是8位字符类型，就是说呢，一个字符有8位，所以最多就能表示2^8=256种不同的字符啦。而<code>wchar_t</code>类型根据不同的C/C++库有不同规定，一般是16位或者32位的。</p>
+<p>之所以会有<code>wchar_t</code>类型的存在，是因为很多语言不像英语一样字母那么少啊，256种根本表现不过来啊摔。综上所述，在要用到各种字母很多的奇奇怪怪语言（比如中文、日文）的时候，就要用到<code>wchar_t</code>了。顺便吐槽下日语虽然只有50音，但是人家也有汉字啊汉字啊！</p>
+<h3 id="string和wide-string"><a href="#string和wide-string" class="headerlink" title="string和wide string"></a>string和wide string</h3><p>有了构成的两种元素，我们就可以开聊string和wide string了。</p>
+<p>string呢就是<code>string</code>，wide string就是<code>wstring</code>。它们在C++标准里的定义分别是：</p>
+<blockquote>
+<p>typedef basic_string\<char\> string;<br>typedef basic_string\<wchar_t\> wstring;</wchar_t\></char\></p>
+</blockquote>
+<p>所以其实就只有<code>char</code>和<code>wchar_t</code>的区别。那么写写看？</p>
+<figure class="highlight c"><figcaption><span>++</span></figcaption><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">string</span> str = <span class="string">"Hello world!"</span>;</div><div class="line">wstring wstr = <span class="string">L"Hello world!"</span>;</div><div class="line"><span class="comment">//cout &lt;&lt; str &lt;&lt; endl;</span></div><div class="line"><span class="comment">//wcout &lt;&lt; wstr &lt;&lt; endl;</span></div></pre></td></tr></table></figure>
+<p>看起来就是所有函数前都加个w就可以啦。注意在表示宽字符串常量的时候，前面要加上个大写的L。’Introduction to 3D Game Programming with DirectX 9.0’这本书中的样例里都没加这个，不知道是不是写这个书的时候年代比较久远，那些接口大约还没有宽字符串的支持？那个时候大约只要用<code>string</code>就可以了吧。</p>
+<p>然后既然有两种字符串，当然是可以转换哒！你问我怎么换？当然是用库函数了哼！</p>
+<h3 id="转换"><a href="#转换" class="headerlink" title="转换"></a>转换</h3><figure class="highlight c"><figcaption><span>++</span></figcaption><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">swprintf</span> <span class="params">(<span class="keyword">wchar_t</span>* ws, <span class="keyword">size_t</span> len, <span class="keyword">const</span> <span class="keyword">wchar_t</span>* format, ...)</span></span>;</div></pre></td></tr></table></figure>
+<blockquote>
+<p>ws是一个指向用于存放结果宽字符串的buffer的指针<br>len是buffer的最大值（len不算最后那个空字符的长度）<br>format就是我们常在printf里写的那个格式啦<br>后面还可以有一些附加的参数，就类似于printf后面那些参数啦，详细可参考<a href="http://www.cplusplus.com/reference/cwchar/swprintf/" target="_blank" rel="external">这里</a><br>返回值是一个int类型，表示string中字符的个数</p>
+</blockquote>
+<p>给个例子吧</p>
+<figure class="highlight c"><figcaption><span>++</span></figcaption><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">wchar_t</span> buffer[<span class="number">100</span>];</div><div class="line"><span class="keyword">int</span> no = <span class="number">1</span>;</div><div class="line">swprintf(buffer, <span class="number">100</span>, <span class="string">L"Hello World %d!\n"</span>, no);</div><div class="line">wcout &lt;&lt; buffer &lt;&lt; <span class="built_in">endl</span>;</div></pre></td></tr></table></figure>
+<h3 id="wsprintf"><a href="#wsprintf" class="headerlink" title="wsprintf"></a>wsprintf</h3><p>虽然这个跟<code>swprintf</code>长得很像，但人家是Windows的API啦，在<a href="https://msdn.microsoft.com/en-us/library/ms647550\(VS.85\" target="_blank" rel="external">这里</a>.aspx)可以查到。这个函数的意思是：</p>
+<blockquote>
+<p>Writes formatted data to the specified buffer.  </p>
+</blockquote>
+<p>跟宽字符串没什么关系啦。而且人家还说：</p>
+<blockquote>
+<p>Note  Do not use. Consider using one of the following functions instead: <code>StringCbPrintf</code>, <code>StringCbPrintfEx</code>, <code>StringCchPrintf</code>, or <code>StringCchPrintfEx</code>. See Security Considerations.</p>
+</blockquote>
+<p>嗯，不要用。</p>
+<h3 id="再说一点"><a href="#再说一点" class="headerlink" title="再说一点"></a>再说一点</h3><p>关于<code>wchar_t</code>的内容在<a href="http://www.cplusplus.com/reference/cwchar/" target="_blank" rel="external">这里</a>都可以找到。</p>
+<p>最后鞠躬，谢幕。(๑•̀ω•́๑)</p>
+<h4 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h4><p>[1] <a href="https://en.wikipedia.org/wiki/C_string_handling" target="_blank" rel="external">维基百科词条-C string handling</a><br>[2] <a href="http://www.cplusplus.com/reference/cwchar/" target="_blank" rel="external">http://www.cplusplus.com/reference/cwchar/</a></p>
+
+      
+    </div>
+    <footer>
+      
+        
+  
+  <div class="categories">
+    <a href="/categories/programming-language/">programming language</a>
+  </div>
+
+        
+        
+  <div class="addthis addthis_toolbox addthis_default_style">
+    
+      <a class="addthis_button_facebook_like" fb:like:layout="button_count"></a>
+    
+    
+      <a class="addthis_button_tweet"></a>
+    
+    
+      <a class="addthis_button_google_plusone" g:plusone:size="medium"></a>
+    
+    
+      <a class="addthis_button_pinterest_pinit" pi:pinit:layout="horizontal"></a>
+    
+    <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js"></script>
+
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+<section id="comment">
+  <h1 class="title">Kommentare</h1>
+
+  
+      <div id="fb-root"></div>
+<script>
+  (function(d, s, id) {
+    var js, fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) return;
+    js = d.createElement(s); js.id = id;
+    js.src = "//connect.facebook.net/en_US/all.js#xfbml=1&appId=123456789012345";
+    fjs.parentNode.insertBefore(js, fjs);
+  }(document, 'script', 'facebook-jssdk'));
+</script>
+
+<div class="fb-comments" data-href="http://yoursite.com/2017/03/06/2017-03-06-swprintf/index.html" data-num-posts="5" data-width="840" data-colorscheme="light"></div>
+      
+  
+</section>
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="Suche">
+    <input type="hidden" name="q" value="site:yoursite.com">
+  </form>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">Kategorien</h3>
+  <ul class="entry">
+  
+    <li><a href="/categories/software-engineer/API/">API</a><small>1</small></li>
+  
+    <li><a href="/categories/Beijing/">Beijing</a><small>1</small></li>
+  
+    <li><a href="/categories/C语言学习笔记/">C语言学习笔记</a><small>1</small></li>
+  
+    <li><a href="/categories/leetcode/HashTable/">HashTable</a><small>1</small></li>
+  
+    <li><a href="/categories/source-code/JXIO/">JXIO</a><small>1</small></li>
+  
+    <li><a href="/categories/language/Japanese/">Japanese</a><small>2</small></li>
+  
+    <li><a href="/categories/paper/NLP/">NLP</a><small>1</small></li>
+  
+    <li><a href="/categories/Spark/RDD/">RDD</a><small>1</small></li>
+  
+    <li><a href="/categories/Security/">Security</a><small>1</small></li>
+  
+    <li><a href="/categories/Spark/">Spark</a><small>2</small></li>
+  
+    <li><a href="/categories/source-code/Spark/">Spark</a><small>5</small></li>
+  
+    <li><a href="/categories/leetcode/Two-Pointers/">Two Pointers</a><small>1</small></li>
+  
+    <li><a href="/categories/unity/UGUI/">UGUI</a><small>1</small></li>
+  
+    <li><a href="/categories/unity/animation/">animation</a><small>1</small></li>
+  
+    <li><a href="/categories/blog/">blog</a><small>3</small></li>
+  
+    <li><a href="/categories/coding/">coding</a><small>1</small></li>
+  
+    <li><a href="/categories/coding/compiler/">compiler</a><small>1</small></li>
+  
+    <li><a href="/categories/Spark/configuration/">configuration</a><small>1</small></li>
+  
+    <li><a href="/categories/leetcode/divide-and-conquer/">divide and conquer</a><small>1</small></li>
+  
+    <li><a href="/categories/dp/">dp</a><small>1</small></li>
+  
+    <li><a href="/categories/leetcode/dp/">dp</a><small>1</small></li>
+  
+    <li><a href="/categories/music/guitar/">guitar</a><small>1</small></li>
+  
+    <li><a href="/categories/language/">language</a><small>2</small></li>
+  
+    <li><a href="/categories/leetcode/">leetcode</a><small>9</small></li>
+  
+    <li><a href="/categories/language/Japanese/lyric/">lyric</a><small>1</small></li>
+  
+    <li><a href="/categories/mapreduce/">mapreduce</a><small>1</small></li>
+  
+    <li><a href="/categories/python/matplotlib/">matplotlib</a><small>1</small></li>
+  
+    <li><a href="/categories/music/">music</a><small>1</small></li>
+  
+    <li><a href="/categories/paper/">paper</a><small>2</small></li>
+  
+    <li><a href="/categories/programming-language/">programming language</a><small>1</small></li>
+  
+    <li><a href="/categories/python/">python</a><small>1</small></li>
+  
+    <li><a href="/categories/paper/scheduler/">scheduler</a><small>1</small></li>
+  
+    <li><a href="/categories/software-engineer/">software engineer</a><small>1</small></li>
+  
+    <li><a href="/categories/Spark/RDD/source-code/">source code</a><small>1</small></li>
+  
+    <li><a href="/categories/source-code/">source code</a><small>6</small></li>
+  
+    <li><a href="/categories/spark/">spark</a><small>2</small></li>
+  
+    <li><a href="/categories/unity/">unity</a><small>2</small></li>
+  
+  </ul>
+</div>
+
+
+  
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner">
+<div class="alignleft">
+  <script src="//dn-lbstatics.qbox.me/lbservice/busuanzi/2.0/busuanzi.mini.js"/></script>
+  <span id="busuanzi_container_site_uv">已经有<span id="busuanzi_value_site_uv"></span>人次访问carolz的小站啦 ( •̀ ω •́ )y</span>
+  <br /><br />
+  
+  &copy; 2017 6carol6
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>
