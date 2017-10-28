@@ -1,0 +1,577 @@
+<!DOCTYPE html><html lang="null"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description"><title>Spark Scheduling | ShallWe Talk</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=0.0.0"><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/normalize/7.0.0/normalize.min.css"><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/pure/1.0.0/pure-min.css"><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/pure/1.0.0/grids-responsive-min.css"><link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.min.css"><script type="text/javascript" src="//cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script><link rel="Shortcut Icon" type="image/x-icon" href="/favicon.ico"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">Spark Scheduling</h1><a id="logo" href="/.">ShallWe Talk</a><p class="description"></p></div><div id="nav-menu"><a href="/." class="current"><i class="fa fa-home"> Start</i></a><a href="/archives/"><i class="fa fa-archive"> Archiv</i></a><a href="/about/"><i class="fa fa-user"> Über</i></a><a href="/atom.xml"><i class="fa fa-rss"> RSS</i></a></div></div><div id="layout" class="pure-g"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">Spark Scheduling</h1><div class="post-meta">May 22, 2015<span> | </span><span class="category"><a href="/categories/source-code/">source code</a><a href="/categories/source-code/Spark/">Spark</a></span></div><div class="post-content"><p>从源码的角度稍微来追踪一下Spark中的任务调度是什么样的。网上好多分析的版本跟carolz看的spark版本不一样啊，真忧桑。顺便说一句，Spark源码是用Scala写的，对于新手，那些语法糖让我们实在痛苦&gt;。&lt;，稍稍坚持一下~那么，就开始吧。  </p>
+<p>Spark Version: 1.0.1  </p>
+<p>让我们从一个例子开始：  </p>
+<!--lang: java-->
+<pre><code>val textFile = sc.textFile(&quot;readme.md&quot;)
+textFile.filter(line=&gt;line.contains(&quot;spark&quot;)).count()  
+</code></pre><a id="more"></a>
+<p>这是一个统计readme.md里含有”spark”这个单词的行数的一个程序。这是一个简单的没有shuffle和reduce的job。  </p>
+<p>在之前分析RDD的文章中我们讲过，这里<code>textFile</code>是一个MappedRDD。然后我们对这个RDD进行filter操作。这是一个对RDD的基本操作，我们可以在RDD.scala里找到。  </p>
+<!--lang: scala-->
+<pre><code>def filter(f: T =&gt; Boolean): RDD[T] = new FilteredRDD(this, sc.clean(f))
+</code></pre><p>=================================<strong>我是闭包分割线</strong>===============================  </p>
+<p>可以看到这里生成了一个FilteredRDD，并把<code>line=&gt;line.contains(&quot;spark&quot;)</code>作为参数传了进来，我们先来跟踪<code>sc.clean(f)</code>，默默打开SparkContext.scala  </p>
+<!--lang: scala-->
+<pre><code>private[spark] def clean[F &lt;: AnyRef](f: F): F = {
+    ClosureCleaner.clean(f)
+    f
+}
+</code></pre><p>然后去spark.util.ClosureCleaner里找到<code>ClosureCleaner.clean</code>这个函数有点长，我就不贴了。我们先搞清楚它是在做什么。首先，从函数的名字可以看出这是在做闭包清理。要知道什么是闭包清理首先就要知道什么是闭包。  </p>
+<p>从<a href="https://github.com/ColZer/DigAndBuried/blob/master/spark/function-closure-cleaner.md" target="_blank" rel="external">这篇文章</a>我们可以知道：闭包就是拥有对outer函数/类的变量的引用，从而可以在外面函数栈执行结束以后，依然握有外面函数栈/堆变量的引用，并可以改变他们的值。比如对于匿名函数，我们就可以体会出这个闭包是你怎么回事。所以“闭包有对外部变量的引用的能力，这个能力是有潜在风险的。首先它会影响变量的GC，另外他会影响函数对象的序列化”。  </p>
+<p>然后我们继续跟读代码。可以看到这段代码的注释<code>TODO: cache outerClasses / innerClasses / accessedFields</code>。读了上面这段我们就清楚了，它需要把闭包函数的outerClasses/innerClasses/accessedField全部都cache下来，免得这些可被闭包函数访问的区域被GC丢掉了。  </p>
+<p>=================================<strong>闭包就讲到这里啦</strong>===============================  </p>
+<p>我们继续回到主代码，生成<code>FilteredRDD</code>之后，对这个RDD进行了一个<code>count()</code>操作。这也是一个RDD的基本操作，在RDD.scala中。  </p>
+<!--lang: scala-->
+<pre><code>def count(): Long = sc.runJob(this, Utils.getIteratorSize _).sum
+</code></pre><p>我们知道，对于RDD的操作可以分为Transformation和Action两种，<code>count()</code>是一个Action操作，这种操作会对之前的RDD进行真正的执行，也就是执行<code>sc.runJob</code>。OK，现在我们打开SparkContext.scala，顺着<code>sc.runJob</code>追下去。  </p>
+<p>这个函数在SparkContext里有多个不同的重载，我们找到上面调用的那个（这里进行了很多重载函数的调用嵌套，不想看直接跳到最后一个runJob）  </p>
+<!--lang: scala-->
+<pre><code>/**
+* Run a job on all partitions in an RDD and return the results in an array.
+*/
+def runJob[T, U: ClassTag](rdd: RDD[T], func: Iterator[T] =&gt; U): Array[U] = {
+    runJob(rdd, func, 0 until rdd.partitions.size, false)
+}
+</code></pre><p>然后这个又调用了下面这个重载  </p>
+<!--lang: scala-->
+<pre><code>/**
+* Run a job on a given set of partitions of an RDD, but take a function of type
+* `Iterator[T] =&gt; U` instead of `(TaskContext, Iterator[T]) =&gt; U`.
+*/
+def runJob[T, U: ClassTag](
+    rdd: RDD[T],
+    func: Iterator[T] =&gt; U,
+    partitions: Seq[Int],
+    allowLocal: Boolean
+): Array[U] = {
+    runJob(rdd, (context: TaskContext, iter: Iterator[T]) =&gt; func(iter), partitions, allowLocal)
+}
+</code></pre><p>然后又调用了下面这个重载  </p>
+<!--lang: scala-->
+<pre><code>/**
+* Run a function on a given set of partitions in an RDD and return the results as an array. The
+* allowLocal flag specifies whether the scheduler can run the computation on the driver rather
+* than shipping it out to the cluster, for short actions like first().
+*/
+def runJob[T, U: ClassTag](
+    rdd: RDD[T],
+    func: (TaskContext, Iterator[T]) =&gt; U,
+    partitions: Seq[Int],
+    allowLocal: Boolean
+): Array[U] = {
+    val results = new Array[U](partitions.size)
+    runJob[T, U](rdd, func, partitions, allowLocal, (index, res) =&gt; results(index) = res)
+    results
+}
+</code></pre><p>最终调用到下面这个重载  </p>
+<!--lang: scala-->
+<pre><code>/**
+* Run a function on a given set of partitions in an RDD and pass the results to the given
+* handler function. This is the main entry point for all actions in Spark. The allowLocal
+* flag specifies whether the scheduler can run the computation on the driver rather than
+* shipping it out to the cluster, for short actions like first().
+*/
+def runJob[T, U: ClassTag](
+    rdd: RDD[T],
+    func: (TaskContext, Iterator[T]) =&gt; U,
+    partitions: Seq[Int],
+    allowLocal: Boolean,
+    resultHandler: (Int, U) =&gt; Unit) {
+    if (dagScheduler == null) {
+        throw new SparkException(&quot;SparkContext has been shutdown&quot;)
+    }
+    val callSite = getCallSit //这是一个函数调用链的记录，不用太在意
+    val cleanedFunc = clean(func)
+    logInfo(&quot;Starting job: &quot; + callSite)
+    val start = System.nanoTime
+    dagScheduler.runJob(rdd, cleanedFunc, partitions, callSite, allowLocal,
+        resultHandler, localProperties.get) //看这里看这里
+    logInfo(&quot;Job finished: &quot; + callSite + &quot;, took &quot; + (System.nanoTime - start) / 1e9 + &quot; s&quot;)
+    rdd.doCheckpoint()
+}
+</code></pre><p>可以看到这个函数一来就对<code>dagScheduler</code>是否为空进行了一个判断，如果为空是要报错的。我们先占个坑，其实可以看到<code>dagScheduler</code>在<code>SparkContext</code>新建的时候就被初始化了（貌似事实也正是如此），或是以后可以研究一下<strong>master开启的时候究竟做了哪些事情</strong>。  </p>
+<p>OK，现在以上代码中最关键的一句就是<code>dagScheduler.runJob</code>了。我们来追一下DAGScheduler.scala  </p>
+<!--lang: scala-->
+<pre><code>def runJob[T, U: ClassTag](
+    rdd: RDD[T],
+    func: (TaskContext, Iterator[T]) =&gt; U,
+    partitions: Seq[Int],
+    callSite: String,
+    allowLocal: Boolean,
+    resultHandler: (Int, U) =&gt; Unit,
+    properties: Properties = null)
+{
+    //提交了一个job然后等待完成啦
+    val waiter = submitJob(rdd, func, partitions, callSite, allowLocal, resultHandler, properties)
+    waiter.awaitResult() match {
+        case JobSucceeded =&gt; {}
+        case JobFailed(exception: Exception) =&gt;
+            logInfo(&quot;Failed to run &quot; + callSite)
+            throw exception
+    }
+  }
+</code></pre><p>就是提交了一个job然后等待job完成，去追一下<code>submitJob</code>：  </p>
+<!--lang: scala-->
+<pre><code>/**
+* Submit a job to the job scheduler and get a JobWaiter object back. The JobWaiter object
+* can be used to block until the the job finishes executing or can be used to cancel the job.
+*/
+def submitJob[T, U](
+    rdd: RDD[T],
+    func: (TaskContext, Iterator[T]) =&gt; U,
+    partitions: Seq[Int],
+    callSite: String,
+    allowLocal: Boolean,
+    resultHandler: (Int, U) =&gt; Unit,
+    properties: Properties = null): JobWaiter[U] =
+{
+    // Check to make sure we are not launching a task on a partition that does not exist.
+    //这里的partition是在runJob的时候就传进来了，用0 until rdd.partition.size所以会存在的
+    val maxPartitions = rdd.partitions.length
+    partitions.find(p =&gt; p &gt;= maxPartitions || p &lt; 0).foreach { p =&gt;
+        throw new IllegalArgumentException(
+            &quot;Attempting to access a non-existent partition: &quot; + p + &quot;. &quot; +
+            &quot;Total number of partitions: &quot; + maxPartitions)
+    }
+    //每次submit一个job，jobId都加1
+    val jobId = nextJobId.getAndIncrement()
+    if (partitions.size == 0) {
+        return new JobWaiter[U](this, jobId, 0, resultHandler)
+    }
+
+    assert(partitions.size &gt; 0)
+    val func2 = func.asInstanceOf[(TaskContext, Iterator[_]) =&gt; _]
+    val waiter = new JobWaiter(this, jobId, partitions.size, resultHandler)
+    eventProcessActor ! JobSubmitted(
+        jobId, rdd, func2, partitions.toArray, allowLocal, callSite, waiter, properties)
+    waiter
+}
+</code></pre><p><strong>这里有一个问题，为什么当<code>partitions.size==0</code>时，直接<code>return new JobWaiter[U](this, jobId, 0, resultHandler)</code>？这里的<code>resultHandler</code>在之前被传入的值是<code>(index, res) =&gt; results(index) = res</code>，与用户指定的func并没有什么关系呀。</strong><br>关于这个问题，我们现在跟踪的这个程序并不存在，因为partition是在使用<code>0 until rdd.parition.size</code>来初始化的，所以一定有partition，所以我们先放一放这个问题。  </p>
+<p>我们先看<code>partitions.size!=0</code>的情况。这里首先对<code>func</code>进行了一个处理，去看看这个处理做了什么事情。  </p>
+<p><code>asInstanceOf</code>是scala语言的一个类型转换机制。把原来<code>func</code>里的T和U都变成了_  </p>
+<p>然后new了一个<code>JobWaiter</code>，在<code>JobWaiter</code>里有一段注释很能说明问题：  </p>
+<!--lang: scala-->
+<pre><code>/**
+* An object that waits for a DAGScheduler job to complete. As tasks finish, it passes their
+* results to the given handler function.
+*/
+</code></pre><p>然后把这个waiter和之前的一些变量加上<code>JobSubmitted</code>，组成一个消息发给<code>eventProcessActor</code>。  </p>
+<p>然后我们发现这个<code>eventProcessActor</code>也在DAGScheduler.scala中，在<code>DAGSchedulerEventProcessActor</code>类当中。在这个类里有一个<code>receive</code>函数，我们看看当收到<code>JobSubmitted</code>消息时，会怎么处理这个消息。  </p>
+<!--lang: scala-->
+<pre><code>/**
+* The main event loop of the DAG scheduler.
+*/
+def receive = {
+    case JobSubmitted(jobId, rdd, func, partitions, allowLocal, callSite, listener, properties) =&gt;
+        dagScheduler.handleJobSubmitted(jobId, rdd, func, partitions, allowLocal, callSite,
+            listener, properties)
+    ....//还有很多case我们先省掉
+}
+</code></pre><p>噢，调用了<code>dagScheduler.handleJobSubmitted</code>。这里说一句，JYY曾经教导过我们函数一般写得不超过一屏，不然不好debug，这个函数在我22.5寸的屏幕上差不多有一屏幕长了，算是一个蛮长的函数，不过逻辑并没有那么复杂。    </p>
+<!--lang: scala-->
+<pre><code>private[scheduler] def handleJobSubmitted(jobId: Int,
+    finalRDD: RDD[_],
+    func: (TaskContext, Iterator[_]) =&gt; _,
+    partitions: Array[Int],
+    allowLocal: Boolean,
+    callSite: String,
+    listener: JobListener,
+    properties: Properties = null)
+{
+    var finalStage: Stage = null
+    try {
+        // New stage creation may throw an exception if, for example, jobs are run on a
+        // HadoopRDD whose underlying HDFS files have been deleted.
+        finalStage = newStage(finalRDD, partitions.size, None, jobId, Some(callSite))
+    } catch {
+        case e: Exception =&gt;
+            logWarning(&quot;Creating new stage failed due to exception - job: &quot; + jobId, e)
+            listener.jobFailed(e)
+            return
+    }
+    if (finalStage != null) {
+        val job = new ActiveJob(jobId, finalStage, func, partitions, callSite, listener, properties)
+        clearCacheLocs()
+        logInfo(&quot;Got job %s (%s) with %d output partitions (allowLocal=%s)&quot;.format(
+            job.jobId, callSite, partitions.length, allowLocal))
+        logInfo(&quot;Final stage: &quot; + finalStage + &quot;(&quot; + finalStage.name + &quot;)&quot;)
+        logInfo(&quot;Parents of final stage: &quot; + finalStage.parents)
+        logInfo(&quot;Missing parents: &quot; + getMissingParentStages(finalStage))
+        if (allowLocal &amp;&amp; finalStage.parents.size == 0 &amp;&amp; partitions.length == 1) {
+            // Compute very short actions like first() or take() with no parent stages locally.
+            //对于比较小的任务，本地算算就好啦
+            listenerBus.post(SparkListenerJobStart(job.jobId, Array[Int](), properties))
+            runLocally(job)
+        } else {
+            //主要看这里
+            jobIdToActiveJob(jobId) = job //这是一个HashMap
+            activeJobs += job
+            resultStageToJob(finalStage) = job //这是一个HashMap
+            listenerBus.post(SparkListenerJobStart(job.jobId, jobIdToStageIds(jobId).toArray,properties))
+            submitStage(finalStage)
+        }
+    }
+    submitWaitingStages()
+}
+</code></pre><p>可以看到一来就从finalStage开始。对于这段解读，我们参考了<a href="http://chuxi.github.io/spark/2015/04/20/Spark-Source-Code-Study/" target="_blank" rel="external">这篇文章</a>。  </p>
+<p>首先从finalRDD开始新建了一个stage，在我们这个例子里finalRDD就是FilteredRDD。然后从这个stage开始new了一个ActiveJob，这个数据结构没什么好讲的，一共就几行。  </p>
+<p>然后判断了一下，如果任务比较小，而且没有parent stages就可以本地做了（直接<code>runLocally(job)</code>）。否则需要<code>submitStage(finalStage)</code>。  </p>
+<p>不管是本地还是提交stage的做法，我们注意到都有<code>listenerBus.post</code>的操作。<code>listenerBus</code>是一个<code>LiveListenerBus</code>类型的实例，在<code>DAGScheduler</code>被创建的时候作为参数传入。这个类可以看做是一个用于存储所有Spark状态相关监听器的ArrayList。在这里我们把一个<code>SparkListenerJobStart</code>传入，这是一个DevelopAPI。先不管这个了。  </p>
+<p>=================================<strong>我是本地计算分割线</strong>===============================  </p>
+<p>然后先来看下runLocally。这是一个调用<code>runLocallyWithinThread(job)</code>的线程。一旦被调用，线程直接开始run。run了什么呢？我们来看一下。  </p>
+<!--lang: scala-->
+<pre><code>// Broken out for easier testing in DAGSchedulerSuite.
+protected def runLocallyWithinThread(job: ActiveJob) {
+    var jobResult: JobResult = JobSucceeded
+    try {
+        SparkEnv.set(env)
+        val rdd = job.finalStage.rdd
+        val split = rdd.partitions(job.partitions(0))
+        val taskContext =
+             new TaskContext(job.finalStage.id, job.partitions(0), 0, runningLocally = true)
+        try {
+            val result = job.func(taskContext, rdd.iterator(split, taskContext))
+            job.listener.taskSucceeded(0, result)
+        } finally {
+            taskContext.executeOnCompleteCallbacks()
+        }
+    } catch {
+        case e: Exception =&gt;
+            val exception = new SparkDriverExecutionException(e)
+            jobResult = JobFailed(exception)
+            job.listener.jobFailed(exception)
+    } finally {
+        val s = job.finalStage
+        stageIdToJobIds -= s.id    // clean up data structures that were populated for a local job,
+        stageIdToStage -= s.id     // but that won&apos;t get cleaned up via the normal paths through
+        stageToInfos -= s          // completion events or stage abort
+        jobIdToStageIds -= job.jobId
+        listenerBus.post(SparkListenerJobEnd(job.jobId, jobResult))
+    }
+}
+</code></pre><p>一来就判断说Job Succeed了，后面如果catch到错，再改。计算好以后会把结果送到<code>job.listener.taskSucceeded(0, result)</code>。  </p>
+<p>=================================<strong>本地计算就讲到这里啦</strong>===============================  </p>
+<p>然后再来看看要送到远程的job。远程的job比本地多了一系列往HashMap中添加映射的过程，然后多了一个<code>submitStage(finalStage)</code>。我们从这个submit看起。同样在DAGScheduler.scala  </p>
+<!--lang: scala-->
+<pre><code>/** Submits stage, but first recursively submits any missing parents. */
+private def submitStage(stage: Stage) {
+    val jobId = activeJobForStage(stage)
+    if (jobId.isDefined) {
+        logDebug(&quot;submitStage(&quot; + stage + &quot;)&quot;)
+        if (!waitingStages(stage) &amp;&amp; !runningStages(stage) &amp;&amp; !failedStages(stage)) {
+            //这里是在找父依赖
+            val missing = getMissingParentStages(stage).sortBy(_.id)
+            logDebug(&quot;missing: &quot; + missing)
+            if (missing == Nil) {
+                logInfo(&quot;Submitting &quot; + stage + &quot; (&quot; + stage.rdd + &quot;), which has no missing parents&quot;)
+                submitMissingTasks(stage, jobId.get)
+                runningStages += stage
+            } else {
+                for (parent &lt;- missing) {
+                    submitStage(parent) //递归啦！递归啦！递归啦！！！
+                }
+                waitingStages += stage
+            }
+        }
+    } else {
+        abortStage(stage, &quot;No active job for stage &quot; + stage.id)
+    }
+}
+</code></pre><p>=================================<strong>找missing stage分割线</strong>===============================  </p>
+<p>我们先来看一下是怎么<code>getMissingParentStages(stage)</code>的。  </p>
+<!--lang: scala-->
+<pre><code>private def getMissingParentStages(stage: Stage): List[Stage] = {
+    val missing = new HashSet[Stage] //放missing的Stage的
+    val visited = new HashSet[RDD[_]]
+    def visit(rdd: RDD[_]) {
+        if (!visited(rdd)) {
+            visited += rdd
+            if (getCacheLocs(rdd).contains(Nil)) {
+                for (dep &lt;- rdd.dependencies) {
+                    dep match {
+                        case shufDep: ShuffleDependency[_,_] =&gt;
+                             val mapStage = getShuffleMapStage(shufDep, stage.jobId)
+                            if (!mapStage.isAvailable) {
+                                 missing += mapStage
+                             }
+                        case narrowDep: NarrowDependency[_] =&gt;
+                            visit(narrowDep.rdd)
+                    }
+                }
+            }
+        }
+    }
+    visit(stage.rdd)
+    missing.toList
+}
+</code></pre><p>就是顺着依赖链往上找所有missing的Stage，加到missing list中，返回。这里注意有一个宽依赖和窄依赖的判断。如果是窄依赖，直接递归上一个rdd，并不会新加一个Stage。<strong>只有对于要shuffle的宽依赖才会new Stage。</strong>对于宽依赖，会<code>getShffleMapStage</code>并放到missing list中。在<code>getShffleMapStage</code>中，会调用<code>newOrUsedStage</code>，这个函数是专门为shuffle stage准备的。那么它做了什么事情呢？  </p>
+<!--lang:scala-->
+<pre><code> /**
+ * Create a shuffle map Stage for the given RDD.  The stage will also be associated with the
+ * provided jobId.  If a stage for the shuffleId existed previously so that the shuffleId is
+ * present in the MapOutputTracker, then the number and location of available outputs are
+ * recovered from the MapOutputTracker
+ */
+private def newOrUsedStage(
+    rdd: RDD[_],
+    numTasks: Int,
+    shuffleDep: ShuffleDependency[_,_],
+    jobId: Int,
+    callSite: Option[String] = None)
+  : Stage =
+{
+  //注意到如果shuffle是会new Stage的。
+  val stage = newStage(rdd, numTasks, Some(shuffleDep), jobId, callSite)
+  if (mapOutputTracker.containsShuffle(shuffleDep.shuffleId)) {
+    val serLocs = mapOutputTracker.getSerializedMapOutputStatuses(shuffleDep.shuffleId)
+    val locs = MapOutputTracker.deserializeMapStatuses(serLocs)
+    for (i &lt;- 0 until locs.size) {
+      stage.outputLocs(i) = Option(locs(i)).toList   // locs(i) will be null if missing
+    }
+    stage.numAvailableOutputs = locs.count(_ != null)
+  } else {
+    // Kind of ugly: need to register RDDs with the cache and map output tracker here
+    // since we can&apos;t do it in the RDD constructor because # of partitions is unknown
+    logInfo(&quot;Registering RDD &quot; + rdd.id + &quot; (&quot; + rdd.getCreationSite + &quot;)&quot;)
+    mapOutputTracker.registerShuffle(shuffleDep.shuffleId, rdd.partitions.size)
+  }
+  stage
+}
+</code></pre><p><em>这里占个坑</em>现在并不想看。  </p>
+<p>=================================<strong>missing stage找完啦</strong>===============================  </p>
+<p>让我们回到找所有的missing stage，对于missing list != Nil的情况，说明我们还没有找到头，还没有划分好所有的Stage，此时递归调用<code>submitStage(parent)</code>找。直到missing list == Nil，就说明我们已经找到了所有的父依赖，并根据Shuffle划分好了所有的Stage。这个时候就可以<code>submitMissingTasks</code>了。  </p>
+<!--lang: scala-->
+<pre><code>/** Called when stage&apos;s parents are available and we can now do its task. */
+private def submitMissingTasks(stage: Stage, jobId: Int) {
+    logDebug(&quot;submitMissingTasks(&quot; + stage + &quot;)&quot;)
+    // Get our pending tasks and remember them in our pendingTasks entry
+    val myPending = pendingTasks.getOrElseUpdate(stage, new HashSet)
+    myPending.clear()
+    var tasks = ArrayBuffer[Task[_]]()
+    if (stage.isShuffleMap) {
+        for (p &lt;- 0 until stage.numPartitions if stage.outputLocs(p) == Nil) {
+            //这里是在分这个stage在哪个worker上执行
+            val locs = getPreferredLocs(stage.rdd, p)
+            tasks += new ShuffleMapTask(stage.id, stage.rdd, stage.shuffleDep.get, p, locs)
+        }
+    } else {
+        // This is a final stage; figure out its job&apos;s missing partitions
+        //没有Shuffle的就是最后一个stage了
+        val job = resultStageToJob(stage)
+        for (id &lt;- 0 until job.numPartitions if !job.finished(id)) {
+            val partition = job.partitions(id)
+            val locs = getPreferredLocs(stage.rdd, partition)
+            tasks += new ResultTask(stage.id, stage.rdd, job.func, partition, locs, id)
+        }
+    }
+    //这里是在干什么？如果为空就放到&apos;default&apos;pool去执行呢？
+    val properties = if (jobIdToActiveJob.contains(jobId)) {
+        jobIdToActiveJob(stage.jobId).properties
+    } else {
+        // this stage will be assigned to &quot;default&quot; pool
+        null
+    }
+
+    // must be run listener before possible NotSerializableException
+    // should be &quot;StageSubmitted&quot; first and then &quot;JobEnded&quot;
+    listenerBus.post(SparkListenerStageSubmitted(stageToInfos(stage), properties))
+
+    //表示这个Stage还有task没完成
+    if (tasks.size &gt; 0) {
+        // Preemptively serialize a task to make sure it can be serialized. We are catching this
+        // exception here because it would be fairly hard to catch the non-serializable exception
+        // down the road, where we have several different implementations for local scheduler and
+        // cluster schedulers.
+        try {
+            SparkEnv.get.closureSerializer.newInstance().serialize(tasks.head)
+        } catch {
+            case e: NotSerializableException =&gt;
+            abortStage(stage, &quot;Task not serializable: &quot; + e.toString)
+            runningStages -= stage
+            return
+        }
+
+        logInfo(&quot;Submitting &quot; + tasks.size + &quot; missing tasks from &quot; + stage + &quot; (&quot; + stage.rdd + &quot;)&quot;)
+        myPending ++= tasks
+        logDebug(&quot;New pending tasks: &quot; + myPending)
+        //看这里 看这里
+        taskScheduler.submitTasks(
+          new TaskSet(tasks.toArray, stage.id, stage.newAttemptId(), stage.jobId, properties))
+          stageToInfos(stage).submissionTime = Some(System.currentTimeMillis())
+    } else {
+        //表示这个Stage的所有task都已经完成了
+        logDebug(&quot;Stage &quot; + stage + &quot; is actually done; %b %d %d&quot;.format(
+        stage.isAvailable, stage.numAvailableOutputs, stage.numPartitions))
+        runningStages -= stage
+    }
+}
+</code></pre><p>这个函数首先判断是不是一个shuffle的stage：如果是，对于每个partition<code>new ShuffleMapTask</code>；否则，对于每个partition<code>new ResultTask</code>。这里有一个小设计，每个partition可以选prefer machine。先看一下这个再回到主线。  </p>
+<p>===============================<strong>可以选择partition prefer的machine哟</strong>===============================  </p>
+<p>对于每个stage，对其每个partition，都会有一个<code>getPreferredLocs</code>，这是在判断这个partition哪个machine比较喜欢。如果这个partition被cache了，就选cache它的machine。如果没有，看看这个RDD有没有什么比较喜欢的location。如果还没有，看看这个RDD有没有窄依赖，选择第一个窄依赖的第一个partition所偏爱的地方。<strong>理想状态下要考虑传输数据的大小，但是暂时并没有考虑。</strong>不知道后面的版本有没有改进。  </p>
+<!--lang:scala-->
+<pre><code>/**
+ * Synchronized method that might be called from other threads.
+ * @param rdd whose partitions are to be looked at
+ * @param partition to lookup locality information for
+ * @return list of machines that are preferred by the partition
+ */
+private[spark]
+def getPreferredLocs(rdd: RDD[_], partition: Int): Seq[TaskLocation] = synchronized {
+  // If the partition is cached, return the cache locations
+  val cached = getCacheLocs(rdd)(partition)
+  if (!cached.isEmpty) {
+    return cached
+  }
+  // If the RDD has some placement preferences (as is the case for input RDDs), get those
+  val rddPrefs = rdd.preferredLocations(rdd.partitions(partition)).toList
+  if (!rddPrefs.isEmpty) {
+    return rddPrefs.map(host =&gt; TaskLocation(host))
+  }
+  // If the RDD has narrow dependencies, pick the first partition of the first narrow dep
+  // that has any placement preferences. Ideally we would choose based on transfer sizes,
+  // but this will do for now.
+  rdd.dependencies.foreach {
+    case n: NarrowDependency[_] =&gt;
+      for (inPart &lt;- n.getParents(partition)) {
+        val locs = getPreferredLocs(n.rdd, inPart)
+        if (locs != Nil) {
+          return locs
+        }
+      }
+    case _ =&gt;
+  }
+  Nil
+}
+</code></pre><p>============================================<strong>选择结束</strong>============================================  </p>
+<p>ok，我们回来继续看<code>submitMissingTasks</code>。刚才说到对于Shuffle和最后一个stage，对于每个partition，new了不同的Task加到tasks这个ArrayBuffer里。从这里可以看出<strong>每个task是每个Stage的一个partition</strong>。然后的那一步我在代码里做了注释，还没看懂。但是大概猜测一下就是如果这个job已经active(其中某个stage已经被执行)了，就放到它被执行的那个pool里这样。接下来我们又要往<code>listenerBus</code>里面丢东西了。丢了个<code>SparkListenerStageSubmitted</code>。  </p>
+<p>刚才说到会把stage根据partition拆成task，到这里就应该判断一下如果<code>tasks.size&gt;0</code>说明有task没有完成，否则就把这个stage从<code>runningStages</code>去掉。然后我们重点关注<code>tasks.size&gt;0</code>的情况。  </p>
+<p>然后我们要对这个task进行序列化，不然不能提交。然后就<code>taskScheduler.submitTasks(new TaskSet(tasks.toArray, stage.id, stage.newAttempId(), stage.jobId, properties))</code>。OK终于看完stage阶段了，来到了task。看TaskScheduler.scala，然后发现这个类的所有实现都在TaskSchedulerImpl.scala。以下是这个类的一段注释。  </p>
+<p>====================================<strong>插播一段关于TaskScheduler的作用</strong>==============================  </p>
+<p>这是一段TaskSchedulerImpl的注释。  </p>
+<pre><code>Schedules tasks for multiple types of clusters by acting through a SchedulerBackend.
+It can also work with a local setup by using a LocalBackend and setting isLocal to true.
+It handles common logic, like determining a scheduling order across jobs, waking up to launch
+speculative tasks, etc.
+
+Clients should first call initialize() and start(), then submit task sets through the
+runTasks method.
+
+THREADING: SchedulerBackends and task-submitting clients can call this class from multiple
+threads, so it needs locks in public API methods to maintain its state. In addition, some
+SchedulerBackends synchronize on themselves when they want to send events here, and then
+acquire a lock on us, so we need to make sure that we don&apos;t try to lock the backend while
+we are holding a lock on ourselves.
+</code></pre><p>//////======================================关于那个Backend=================================///////  </p>
+<p>突然想要插播一下关于Backend什么时候被初始化到TaskSchedulerImpl里的。这段代码在SparkContext.scala里，有一个<code>createTaskScheduler</code>这个函数的作用是<code>Creates a task scheduler based on a given master URL. Extracted for testing.</code><strong>这里猜一下它是在master被启动的时候就调用了的。</strong>这里面有对集群启动的方式进行判断，比如local啊mesos啊yarn啊什么的，我们平时用的应该就是spark自带的standalone，所以是SPARK_REGEX。在这里会有  </p>
+<!--scala-->
+<pre><code>val backend = new SparkDeploySchedulerBackend(scheduler, sc, masterUrls)
+scheduler.initialize(backend)
+scheduler  
+</code></pre><p>可以看到使用的backend是在<code>scheduler.client</code>里的<code>SparkDeploySchedulerBackend</code>这是一个<code>endpoint for executors to talk to us</code>猜一下就是<strong>为worker准备的向master报告完成任务的endpoint</strong>。  </p>
+<p>//////=====================================Backend结束=====================================//////  </p>
+<p>总之一句话，<strong>这些东西都是在master刚被开启的时候就new好了的！</strong></p>
+<p>=====================================<strong>TaskScheduler作用介绍结束</strong>=================================  </p>
+<p>看一下刚才调用的<code>submitTasks</code>  </p>
+<!--lang:scala-->
+<pre><code>override def submitTasks(taskSet: TaskSet) {
+  val tasks = taskSet.tasks
+  logInfo(&quot;Adding task set &quot; + taskSet.id + &quot; with &quot; + tasks.length + &quot; tasks&quot;)
+  this.synchronized { 
+    val manager = new TaskSetManager(this, taskSet, maxTaskFailures)
+    activeTaskSets(taskSet.id) = manager
+    schedulableBuilder.addTaskSetManager(manager, manager.taskSet.properties)
+
+    //isLocal默认为false
+    if (!isLocal &amp;&amp; !hasReceivedTask) {
+      starvationTimer.scheduleAtFixedRate(new TimerTask() {
+        override def run() {
+          if (!hasLaunchedTask) {
+            logWarning(&quot;Initial job has not accepted any resources; &quot; +
+              &quot;check your cluster UI to ensure that workers are registered &quot; +
+              &quot;and have sufficient memory&quot;)
+          } else {
+            this.cancel()
+          }
+        }
+      }, STARVATION_TIMEOUT, STARVATION_TIMEOUT)
+    }
+    hasReceivedTask = true
+  }
+  backend.reviveOffers()
+}
+</code></pre><p>这里有一个synchronized，可以猜到这段可能需要被很多线程共享，同一时刻只能有一个现成能够用这段代码块。首先，new了一个<code>TaskSetManager</code>并把这个manager与某一个TaskSet的id相对应。然后把这个manager放到一个<code>schedulableBuilder</code>里。然后进入了一个if语句的判断，<code>isLocal</code>默认为<code>false</code>就不多说了。<code>hasReceivedTask</code>是一个被<code>@volatile</code>修饰的变量，线程在每次使用该变量的时候，都会读取变量修改后的值。  </p>
+<p>然后从<code>backend.reviveOffers()</code>开始卡看，这个函数在<code>CoarseGrainedSchedulerBackend</code>里，通过!发消息的方式递交给<code>driverActor</code>，然后<code>driverActor</code>调用<code>makeOffers()</code>方法。  </p>
+<!--lang:scala-->
+<pre><code>// Make fake resource offers on all executors
+def makeOffers() {
+  launchTasks(scheduler.resourceOffers(
+    executorHost.toArray.map {case (id, host) =&gt; new WorkerOffer(id, host, freeCores(id))}))
+}
+</code></pre><p>注意到这里开始向executors launch tasks了。  </p>
+<pre><code>// Launch tasks returned by a set of resource offers
+def launchTasks(tasks: Seq[Seq[TaskDescription]]) {
+  for (task &lt;- tasks.flatten) {
+    val ser = SparkEnv.get.closureSerializer.newInstance()
+    val serializedTask = ser.serialize(task)
+    if (serializedTask.limit &gt;= akkaFrameSize - AkkaUtils.reservedSizeBytes) {
+      val taskSetId = scheduler.taskIdToTaskSetId(task.taskId)
+      scheduler.activeTaskSets.get(taskSetId).foreach { taskSet =&gt; //这里面存的是TaskSetManager
+        try { 
+          var msg = &quot;Serialized task %s:%d was %d bytes which &quot; +
+            &quot;exceeds spark.akka.frameSize (%d bytes). &quot; +
+            &quot;Consider using broadcast variables for large values.&quot;
+          msg = msg.format(task.taskId, task.index, serializedTask.limit, akkaFrameSize)
+          taskSet.abort(msg)
+        } catch {
+          case e: Exception =&gt; logError(&quot;Exception in error callback&quot;, e)
+        }
+      }
+    }
+    else {
+      freeCores(task.executorId) -= scheduler.CPUS_PER_TASK
+      //看这里，看这里
+      executorActor(task.executorId) ! LaunchTask(new SerializableBuffer(serializedTask))
+    }
+  }
+}
+</code></pre><p>首先对于每个task都要序列化（序列化了才能发出去啊），然后如果出了个什么问题(跟size有关，就是那个if)，对于每一个TaskSetManager，新建一个<code>msg</code>，执行<code>taskSet.abort(msg)</code>。对于没问题，就先把这个Task需要用到的cpu核的数量从freeCores中减去（<strong>这里说明master对整个集群的core的数量有一个全局观，然后可以分配这样</strong>，至于怎么分配可以再研究一下），然后<code>executorActor(task.executorId) ! LaunchTask(new SerializableBuffer(serializedTask))</code>。executorActor是CoarseGrainedSchedulerBackend中的一个HashMap[String, ActorRef]。因此，从<code>executorActor(task.executorId)</code>得到的实际上是一个<code>ActorRef</code>。这是一个akka的数据结构。那么这个消息发到哪里去了呢？答案是在<code>executor.CoarseGrainedExecutorBackend.scala</code>。这个类是在worker上启动了的，具体可以参考<a href="http://blog.csdn.net/colorant/article/details/18549027?utm_source=tuicool" target="_blank" rel="external">这篇文章</a>。所以其实就相当于<strong>把序列化以后的Task通过akka发送给了worker</strong>。顺便说一句，我们就这么从scheduler包来到了executor包。  </p>
+<p>当一个worker收到了一个task它应该做什么呢？我们来看一下CoarseGrainedExecutorBackend.scala  </p>
+<!--lang:scala-->
+<pre><code>override def receive = {
+  ...
+  case LaunchTask(data) =&gt;
+    if (executor == null) {
+      logError(&quot;Received LaunchTask command but executor was null&quot;)
+      System.exit(1)
+    } else {
+      val ser = SparkEnv.get.closureSerializer.newInstance()
+      val taskDesc = ser.deserialize[TaskDescription](data.value)
+      logInfo(&quot;Got assigned task &quot; + taskDesc.taskId)
+      executor.launchTask(this, taskDesc.taskId, taskDesc.serializedTask)//看这里，看这里
+    }
+  ...
+}
+</code></pre><p>这段代码表示收到了一个LaunchTask的消息，参数是刚才传进来的序列化之后的task。如果没发生什么问题的话，首先要把这个task反序列化。然后调用<code>executor.launchTask</code>开始进行这个task。这个<code>executor</code>在Executor.scala里。调用<code>launchTask</code>方法之后生成一个<code>TaskRunner</code>  </p>
+<!--lang:scala-->
+<pre><code>def launchTask(context: ExecutorBackend, taskId: Long, serializedTask: ByteBuffer) {
+  val tr = new TaskRunner(context, taskId, serializedTask)
+  runningTasks.put(taskId, tr)
+  threadPool.execute(tr)
+}
+</code></pre><p>这里new了一个<code>TaskRunner</code>，这是一个<code>Executor</code>的内部类，继承了<code>Runnable</code>，然后存到runningTasks里（这是一个ConcurrentHashMap，存着现在在跑的task们）。然后放到threadPool里执行这个TaskRunner。我们来看一下这个<code>run()</code>  </p>
+<!--lang:scala-->
+<pre><code>override def run(){
+    ...
+    val (taskFiles, taskJars, taskBytes) = Task.deserializeWithDependencies(serializedTask)
+    updateDependencies(taskFiles, taskJars)
+    task = ser.deserialize[Task[Any]](taskBytes, Thread.currentThread.getContextClassLoader)
+    ...
+    val value = task.run(taskId.toInt)
+    //然后后面就是序列化结果传出来啊什么的，先放一下。
+}
+</code></pre><p>首先对Task反序列化，得到这个task依赖的jar包和file，然后使用<code>updateDependencies(taskFiles, taskJars)</code>。把这些依赖都拉过来。如果一切正常，调用<code>val value = task.run(taskId.toInt)</code>。值得一提的是，这里会对java的GC时间进行测量。  </p>
+<p>这就是Spark任务调度直到Worker开始执行的全部过程了。下次我们来讲一讲Worker上是怎么执行这些任务的。</p>
+<p><strong>参考文献</strong><br>(都是carolz乱找的一些别人写的博客，但是感觉写得很不错~paper什么的没有具体源码解读，就不列了，反正就那么几篇，大家都知道)：  </p>
+<p><a href="https://github.com/ColZer/DigAndBuried/blob/master/spark/function-closure-cleaner.md" target="_blank" rel="external">ColZer’s Github</a><br><a href="http://chuxi.github.io/spark/2015/04/20/Spark-Source-Code-Study/" target="_blank" rel="external">Spark Source Code Study - Hanwei feeds dog</a><br><a href="http://blog.csdn.net/colorant/article/details/18549027?utm_source=tuicool" target="_blank" rel="external">Spark internal - 多样化的运行模式（上）</a></p>
+</div><div class="tags"></div><div class="post-nav"><a href="/2015/05/26/leetcode8-string-to-integer/" class="pre">LeetCode8: String to Integer (atoi)</a><a href="/2015/05/17/new-travel-in-janpanese/" class="next">初学日语遇到的好玩的事</a></div></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><form action="//www.google.com/search" method="get" accept-charset="utf-8" target="_blank" class="search-form"><input type="text" name="q" maxlength="20" placeholder="Search"/><input type="hidden" name="sitesearch" value="http://yoursite.com"/></form></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> Kategorien</i></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Beijing/">Beijing</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/C语言学习笔记/">C语言学习笔记</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/Security/">Security</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/Spark/">Spark</a><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/Spark/RDD/">RDD</a><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/Spark/RDD/source-code/">source code</a></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/Spark/configuration/">configuration</a></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/blog/">blog</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/coding/">coding</a><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/coding/compiler/">compiler</a></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/dp/">dp</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/language/">language</a><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/language/Japanese/">Japanese</a><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/language/Japanese/lyric/">lyric</a></li></ul></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/leetcode/">leetcode</a><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/leetcode/HashTable/">HashTable</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/leetcode/Two-Pointers/">Two Pointers</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/leetcode/divide-and-conquer/">divide and conquer</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/leetcode/dp/">dp</a></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/lua/">lua</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/mapreduce/">mapreduce</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/music/">music</a><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/music/guitar/">guitar</a></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/paper/">paper</a><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/paper/NLP/">NLP</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/paper/scheduler/">scheduler</a></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/programming-language/">programming language</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/python/matplotlib/">matplotlib</a></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/software-engineer/">software engineer</a><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/software-engineer/API/">API</a></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/source-code/">source code</a><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/source-code/JXIO/">JXIO</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/source-code/Spark/">Spark</a></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/spark/">spark</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/unity/">unity</a><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/unity/animation/">animation</a></li></ul></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-star-o"> Tags</i></div><div class="tagcloud"></div></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> Letzte</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2017/10/28/unity-eventfunction/">unity_eventfunction</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/10/28/learn-lua/">lua学习</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/07/08/unity-animation/">unity-animation</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/04/09/dynamic-resource-allocation/">Dynamic Resource Allocation</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/03/06/swprintf/">来聊一聊C++的string</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/08/13/beijing/">出去玩-北京</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/05/31/running-spark-on-mesos/">Running Spark on Mesos</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/04/12/spark-summary/">Spark小结</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/03/25/the-number-of-the-increasing-sub-sequences/">一个数组的递增子序列的个数</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/12/13/factorial-nonzero-suffix/">求N!的后9位不为0的数</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-external-link"> Blogroll</i></div><ul></ul><a href="http://www.example1.com/" title="site-name1" target="_blank">site-name1</a><ul></ul><a href="http://www.example2.com/" title="site-name2" target="_blank">site-name2</a><ul></ul><a href="http://www.example3.com/" title="site-name3" target="_blank">site-name3</a></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2017 <a href="/." rel="nofollow">ShallWe Talk.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div><script src="//dn-lbstatics.qbox.me/lbservice/busuanzi/2.0/busuanzi.mini.js"/></script>
+<span id="busuanzi_container_site_uv">已经有<span id="busuanzi_value_site_uv"></span>人次访问carolz的小站啦 ( •̀ ω •́ )y</span></div></div><a id="rocket" href="#top" class="show"></a><script type="text/javascript" src="/js/totop.js?v=0.0.0" async></script><script type="text/javascript" src="//cdn.bootcss.com/fancybox/3.1.20/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=0.0.0" async></script><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/fancybox/3.1.20/jquery.fancybox.min.css"><script type="text/javascript" src="/js/codeblock-resizer.js?v=0.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=0.0.0"></script></div></body></html>

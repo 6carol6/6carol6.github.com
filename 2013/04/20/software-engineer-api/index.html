@@ -1,0 +1,524 @@
+<!DOCTYPE html><html lang="null"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description"><title>软件工程学籍管理系统API | ShallWe Talk</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=0.0.0"><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/normalize/7.0.0/normalize.min.css"><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/pure/1.0.0/pure-min.css"><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/pure/1.0.0/grids-responsive-min.css"><link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.min.css"><script type="text/javascript" src="//cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script><link rel="Shortcut Icon" type="image/x-icon" href="/favicon.ico"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">软件工程学籍管理系统API</h1><a id="logo" href="/.">ShallWe Talk</a><p class="description"></p></div><div id="nav-menu"><a href="/." class="current"><i class="fa fa-home"> Start</i></a><a href="/archives/"><i class="fa fa-archive"> Archiv</i></a><a href="/about/"><i class="fa fa-user"> Über</i></a><a href="/atom.xml"><i class="fa fa-rss"> RSS</i></a></div></div><div id="layout" class="pure-g"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">软件工程学籍管理系统API</h1><div class="post-meta">Apr 20, 2013<span> | </span><span class="category"><a href="/categories/software-engineer/">software engineer</a><a href="/categories/software-engineer/API/">API</a></span></div><div class="post-content"><p>该系统模拟一个高校的研究生学籍管理系统，从学生、教务员、管理员三个角度，基本实现研究生管理系统的所有功能。<br>系统的API定义如下：<br><a id="more"></a></p>
+<p>#API</p>
+<p>###Index<br><a href="#3">管理员</a>  </p>
+<p><a href="#3-1">学籍信息</a><br><a href="#3-1-1">添加学籍信息页面</a>  <a href="#3-1-2">学籍信息统计</a>  <a href="#3-1-3">查看与修改学籍信息</a>  <a href="#3-1-4">学分统计</a>  </p>
+<p><a href="#3-2">选课安排</a><br><a href="#3-2-1">设置选课起止时间</a>  <a href="#3-2-2">公共课的添加与停课</a>  <a href="#3-2-3">查看选课情况</a>  <a href="#3-2-4">增选与退选</a>  </p>
+<p><a href="#class">类的定义</a>  </p>
+<hr>
+<p></p><h3><a name="3">管理员/pages/admin</a></h3>  <p></p>
+<p></p><h4><a name="3-1">学籍信息/pages/admin/SchoolRoll</a></h4>  <p></p>
+<h5><a name="3-1-1">添加学籍信息页面/Add.jsp</a></h5>  
+
+<p>功能：包含已添加学生学籍列表，和正要添加的输入框。</p>
+<p><code>action name:</code> AddSchoolRoll<br><code>servlet name(Class):</code> SampleProject.Admin.SchoolRoll.Add<br><code>page value:</code><br>(Student student)<br>(LoginForm loginForm)<br>其中在本页面中要用到的成员列表  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">class</th>
+<th style="text-align:left">name</th>
+<th style="text-align:left">explanation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">LoginForm</td>
+<td style="text-align:left">username</td>
+<td style="text-align:left">用户名(对于本页面赋值为学生学号)</td>
+</tr>
+<tr>
+<td style="text-align:left">LoginForm</td>
+<td style="text-align:left">password</td>
+<td style="text-align:left">密码</td>
+</tr>
+<tr>
+<td style="text-align:left">LoginForm</td>
+<td style="text-align:left">role</td>
+<td style="text-align:left">角色（0:学生/1:教务员/2:管理员 此项为0）</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">no</td>
+<td style="text-align:left">学号</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">name</td>
+<td style="text-align:left">学生姓名</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">gender</td>
+<td style="text-align:left">性别</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">birth</td>
+<td style="text-align:left">出生日期</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">id</td>
+<td style="text-align:left">身份证号码</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">dname</td>
+<td style="text-align:left">院系名称（通过查院系表得到）</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">mname</td>
+<td style="text-align:left">所在专业</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">domain</td>
+<td style="text-align:left">专业方向</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">enrollyear</td>
+<td style="text-align:left">入学年份</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">grade</td>
+<td style="text-align:left">所在年级</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">schoolyear</td>
+<td style="text-align:left">学制</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">tname</td>
+<td style="text-align:left">导师姓名（通过查教师表）</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">state</td>
+<td style="text-align:left">学籍状态（在籍/不在籍）</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">nationality</td>
+<td style="text-align:left">国籍</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">property</td>
+<td style="text-align:left">培养性质</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">mord</td>
+<td style="text-align:left">博士/硕士</td>
+</tr>
+</tbody>
+</table>
+<p>说明：院系名称和导师姓名分别在院系表和教师表中查询。<br>院系名称应该是一个选择单？然后value与院系号对应</p>
+<p><code>action return:</code><br>SUCCESS =&gt; /pages/admin/SchoolRoll/Add.jsp<br>ERROR =&gt; /pages/admin/SchoolRoll/Add.jsp(with validation error”添加失败”)</p>
+<h5><a name="3-1-2">学籍信息统计/Statistics.jsp</a></h5>  
+
+<p>功能：整理各个院系学生人数</p>
+<p><code>action name:</code> StatisticsSchoolRoll<br><code>servlet name(Class):</code> SampleProject.Admin.SchoolRoll.Statistics<br><code>page value:</code>   </p>
+<p>(int[][] map)二维数组表示 院系：人数 </p>
+<p><code>action return:</code><br>SUCCESS =&gt; /pages/admin/SchoolRoll/Statistics.jsp<br>ERROR =&gt; /pages/admin/SchoolRoll/Statistics.jsp(with validation error”数据库错误”)</p>
+<h5><a name="3-1-3">查看与修改学籍信息/Alter.jsp</a></h5>  
+
+<p>功能：查询已添加学生的学籍信息,可根据学生学号查询特定行</p>
+<p><code>action name:</code> AlterSchoolRoll<br><code>servlet name(Class):</code> SampleProject.Admin.SchoolRoll.Alter<br><code>page value:</code>   </p>
+<p>(Student student)<br>(Department department)</p>
+<p>其中在本页面中要用到的成员列表  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">class</th>
+<th style="text-align:left">name</th>
+<th style="text-align:left">explanation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">no</td>
+<td style="text-align:left">学号</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">name</td>
+<td style="text-align:left">学生姓名</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">gender</td>
+<td style="text-align:left">性别</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">birth</td>
+<td style="text-align:left">出生日期</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">id</td>
+<td style="text-align:left">身份证号码</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">dname</td>
+<td style="text-align:left">院系名称</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">mname</td>
+<td style="text-align:left">所在专业</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">domain</td>
+<td style="text-align:left">专业方向</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">enrollyear</td>
+<td style="text-align:left">入学年份</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">grade</td>
+<td style="text-align:left">所在年级</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">schoolyear</td>
+<td style="text-align:left">学制</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">tname</td>
+<td style="text-align:left">导师姓名</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">state</td>
+<td style="text-align:left">学籍状态（在籍/不在籍）</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">nationality</td>
+<td style="text-align:left">国籍</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">property</td>
+<td style="text-align:left">培养性质</td>
+</tr>
+<tr>
+<td style="text-align:left">Student</td>
+<td style="text-align:left">mord</td>
+<td style="text-align:left">博士/硕士</td>
+</tr>
+</tbody>
+</table>
+<p>说明：院系名称和导师姓名分别在院系表和教师表中查询。<br>修改学生信息那里院系名称应该是可选择列表</p>
+<p><code>action return:</code><br>SUCCESS =&gt; /pages/admin/SchoolRoll/Alter.jsp<br>ERROR =&gt; /pages/admin/SchoolRoll/Alter.jsp(with validation error”修改失败”)</p>
+<h5><a name="3-1-4">学分统计/CreditStatistics.jsp</a></h5>  
+
+<p>功能：列表 |学号|姓名|院系|总学分数|</p>
+<p><code>action name:</code> CreditStatistics<br><code>servlet name(Class):</code> SampleProject.Admin.SchoolRoll.CreditStatistics<br><code>page value:</code><br>(Credit creditStat)</p>
+<table>
+<thead>
+<tr>
+<th>class</th>
+<th style="text-align:left">name</th>
+<th>explanation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Credit</td>
+<td style="text-align:left">no</td>
+<td>学号</td>
+</tr>
+<tr>
+<td>Credit</td>
+<td style="text-align:left">name</td>
+<td>学生姓名</td>
+</tr>
+<tr>
+<td>Credit</td>
+<td style="text-align:left">department</td>
+<td>院系</td>
+</tr>
+<tr>
+<td>Credit</td>
+<td style="text-align:left">credit</td>
+<td>已修学分数</td>
+</tr>
+</tbody>
+</table>
+<p>说明：其中已修学分数通过查课程Course、选课表SCourse、学生表Student获取</p>
+<p><code>action return:</code><br>SUCCESS =&gt; /pages/admin/SchoolRoll/CreditStatistics.jsp<br>ERROR =&gt; /pages/admin/SchoolRoll/CreditStatistics.jsp(with validation error”查询失败”)</p>
+<p></p><h4><a name="3-2">选课安排/pages/admin/CourseArrangement</a></h4>  <p></p>
+<h5><a name="3-2-1">设置选课起止时间/pages/admin/CourseArrangement/SetChooseCoursesTime</a></h5>  
+
+<p>功能：设置全校学生选课起止时间<br><code>action name:</code> SetChooseCoursesTime<br><code>servlet name(Class):</code> SampleProject.Admin.CourseArrangement.SetChooseCoursesTime<br><code>page value:</code><br>(Date start)<br>(Date end)</p>
+<p><code>action return:</code><br>SUCCESS =&gt; /pages/admin/CourseArrangement/SetChooseCoursesTime.jsp(“设置成功”)<br>ERROR =&gt; /pages/admin/CourseArrangement/SetChooseCoursesTime.jsp(with validation error”查询失败”)  </p>
+<p></p><h5><a name="3-2-2">公共课的添加与停课/pages/admin/CourseArrangement/AddOrDelete</a></h5><br>功能：显示已有课程列表，开头有个添加框，每个上面都有删除按钮。<br>开设院系名称为选择框，面向类型为选择框<p></p>
+<p><code>action name:</code> AddOrDelete<br><code>servlet name(Class):</code> SampleProject.Admin.CourseArrangement.AddOrDelete<br><code>page value:</code><br>PublicCourse publicCourse</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">class</th>
+<th style="text-align:left">name</th>
+<th style="text-align:left">explanation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">PublicCourse</td>
+<td style="text-align:left">cno</td>
+<td style="text-align:left">课程号</td>
+</tr>
+<tr>
+<td style="text-align:left">PublicCourse</td>
+<td style="text-align:left">enname</td>
+<td style="text-align:left">英文名称</td>
+</tr>
+<tr>
+<td style="text-align:left">PublicCourse</td>
+<td style="text-align:left">chname</td>
+<td style="text-align:left">中文名称</td>
+</tr>
+<tr>
+<td style="text-align:left">PublicCourse</td>
+<td style="text-align:left">hour</td>
+<td style="text-align:left">学时</td>
+</tr>
+<tr>
+<td style="text-align:left">PublicCourse</td>
+<td style="text-align:left">credit</td>
+<td style="text-align:left">学分</td>
+</tr>
+<tr>
+<td style="text-align:left">PublicCourse</td>
+<td style="text-align:left">dno</td>
+<td style="text-align:left">开设院系号</td>
+</tr>
+<tr>
+<td style="text-align:left">PublicCourse</td>
+<td style="text-align:left">campus</td>
+<td style="text-align:left">校区</td>
+</tr>
+<tr>
+<td style="text-align:left">PublicCourse</td>
+<td style="text-align:left">startweek</td>
+<td style="text-align:left">起始周</td>
+</tr>
+<tr>
+<td style="text-align:left">PublicCourse</td>
+<td style="text-align:left">endweek</td>
+<td style="text-align:left">结束周</td>
+</tr>
+<tr>
+<td style="text-align:left">PublicCourse</td>
+<td style="text-align:left">maxnum</td>
+<td style="text-align:left">最大人数</td>
+</tr>
+<tr>
+<td style="text-align:left">PublicCourse</td>
+<td style="text-align:left">totalnum</td>
+<td style="text-align:left">总人数</td>
+</tr>
+<tr>
+<td style="text-align:left">PublicCourse</td>
+<td style="text-align:left">type</td>
+<td style="text-align:left">面向类型</td>
+</tr>
+<tr>
+<td style="text-align:left">PublicCourse</td>
+<td style="text-align:left">num</td>
+<td style="text-align:left">外院系可选人数</td>
+</tr>
+</tbody>
+</table>
+<p>说明：开设院系号和面向类型注意页面选择框的值的对应</p>
+<p><code>action return:</code><br>SUCCESS =&gt; /pages/admin/CourseArrangement/AddOrDelete.jsp(“添加成功”)<br>ERROR =&gt; /pages/admin/CourseArrangement/AddOrDelete.jsp(with validation error”添加失败”)  </p>
+<p></p><h5><a name="3-2-3">查看选课情况/pages/admin/CourseArrangement/Search</a></h5><br>功能：根据学生学号查询学生选课情况。<br>输入学号，跳转到学生的“查看已选课程”页面<p></p>
+<p><code>action name:</code> Search<br><code>servlet name(Class):</code> SampleProject.Admin.CourseArrangement.Search<br><code>page value:</code><br>(char sno)</p>
+<p><code>action return:</code><br>SUCCESS =&gt; /pages/student/……(学生的“查看已选课程页面。。。”)<br>ERROR =&gt; /pages/admin/CourseArrangement/Search.jsp(with validation error”查询失败”)  </p>
+<p></p><h5><a name="3-2-4">增选与退选/pages/admin/CourseArrangement/ChooseOrDelCourse</a></h5><br>功能：输入学生学号，选择是选课还是退选，跳到该学生选课/退选时候的页面。（这个可不可以实现？）  <p></p>
+<p><code>action name:</code> ChooseOrDelCourse<br><code>servlet name(Class):</code> SampleProject.Admin.CourseArrangement.ChooseOrDelCourse<br><code>page value:</code><br>(char sno)<br>(int type)<br>type=0表示选课，type=1表示退选</p>
+<p><code>action return:</code><br>SUCCESS type=0 =&gt; /pages/student/……(学生的“选课页面。。。”)<br>       type=1 =&gt; /pages/student/……(学生的“退选页面。。。”)<br>ERROR =&gt; /pages/admin/CourseArrangement/ChooseOrDelCourse.jsp(with validation error”选课失败”)  </p>
+<p></p><h5><a name="class">类的定义</a></h5><br><code>为什么定义类？</code><br>类的定义便于在程序中复用。比如教务员、管理员和学生都要查询学生信息。<br>对于学生来说，只需要查个人的信息，在查询时只需要建立Student类的一个实例。<br>对于管理员和教务员来说，查询的往往是一类学生的信息，在查询时就需要建立Student的List。  <p></p>
+<p>Class: Student(未完成，还要加上学生部分的)</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">name</th>
+<th style="text-align:left">explanation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">no</td>
+<td style="text-align:left">学号</td>
+</tr>
+<tr>
+<td style="text-align:left">name</td>
+<td style="text-align:left">学生姓名</td>
+</tr>
+<tr>
+<td style="text-align:left">gender</td>
+<td style="text-align:left">性别</td>
+</tr>
+<tr>
+<td style="text-align:left">birth</td>
+<td style="text-align:left">出生日期</td>
+</tr>
+<tr>
+<td style="text-align:left">id</td>
+<td style="text-align:left">身份证号码</td>
+</tr>
+<tr>
+<td style="text-align:left">dname</td>
+<td style="text-align:left">院系名称（通过查院系表得到）</td>
+</tr>
+<tr>
+<td style="text-align:left">mname</td>
+<td style="text-align:left">所在专业</td>
+</tr>
+<tr>
+<td style="text-align:left">domain</td>
+<td style="text-align:left">专业方向</td>
+</tr>
+<tr>
+<td style="text-align:left">enrollyear</td>
+<td style="text-align:left">入学年份</td>
+</tr>
+<tr>
+<td style="text-align:left">grade</td>
+<td style="text-align:left">所在年级</td>
+</tr>
+<tr>
+<td style="text-align:left">schoolyear</td>
+<td style="text-align:left">学制</td>
+</tr>
+<tr>
+<td style="text-align:left">tname</td>
+<td style="text-align:left">导师姓名（通过查教师表）</td>
+</tr>
+<tr>
+<td style="text-align:left">state</td>
+<td style="text-align:left">学籍状态（在籍/不在籍）</td>
+</tr>
+<tr>
+<td style="text-align:left">nationality</td>
+<td style="text-align:left">国籍</td>
+</tr>
+<tr>
+<td style="text-align:left">property</td>
+<td style="text-align:left">培养性质</td>
+</tr>
+<tr>
+<td style="text-align:left">mord</td>
+<td style="text-align:left">博士/硕士</td>
+</tr>
+</tbody>
+</table>
+<p>Class: Credit</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">name</th>
+<th style="text-align:left">explanation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">no</td>
+<td style="text-align:left">学号</td>
+</tr>
+<tr>
+<td style="text-align:left">name</td>
+<td style="text-align:left">学生姓名</td>
+</tr>
+<tr>
+<td style="text-align:left">department</td>
+<td style="text-align:left">院系</td>
+</tr>
+<tr>
+<td style="text-align:left">credit</td>
+<td style="text-align:left">已修学分数</td>
+</tr>
+</tbody>
+</table>
+<p>说明：其中已修学分数通过查课程Course、选课表SCourse、学生表Student获取</p>
+<p>Class: PublicCourse</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">name</th>
+<th style="text-align:left">explanation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">cno</td>
+<td style="text-align:left">课程号</td>
+</tr>
+<tr>
+<td style="text-align:left">enname</td>
+<td style="text-align:left">英文名称</td>
+</tr>
+<tr>
+<td style="text-align:left">chname</td>
+<td style="text-align:left">中文名称</td>
+</tr>
+<tr>
+<td style="text-align:left">hour</td>
+<td style="text-align:left">学时</td>
+</tr>
+<tr>
+<td style="text-align:left">credit</td>
+<td style="text-align:left">学分</td>
+</tr>
+<tr>
+<td style="text-align:left">dno</td>
+<td style="text-align:left">开设院系号</td>
+</tr>
+<tr>
+<td style="text-align:left">campus</td>
+<td style="text-align:left">校区</td>
+</tr>
+<tr>
+<td style="text-align:left">startweek</td>
+<td style="text-align:left">起始周</td>
+</tr>
+<tr>
+<td style="text-align:left">endweek</td>
+<td style="text-align:left">结束周</td>
+</tr>
+<tr>
+<td style="text-align:left">maxnum</td>
+<td style="text-align:left">最大人数</td>
+</tr>
+<tr>
+<td style="text-align:left">totalnum</td>
+<td style="text-align:left">总人数</td>
+</tr>
+<tr>
+<td style="text-align:left">type</td>
+<td style="text-align:left">面向类型</td>
+</tr>
+<tr>
+<td style="text-align:left">num</td>
+<td style="text-align:left">外院系可选人数</td>
+</tr>
+</tbody>
+</table>
+<p>说明：其中总人数作安排教室用</p>
+</div><div class="tags"></div><div class="post-nav"><a href="/2013/04/20/school-management-system-outline/" class="pre">软件工程demo运行概述</a><a href="/2013/04/13/some-compiler-experiment-problem/" class="next">关于编译原理实验的思考</a></div></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><form action="//www.google.com/search" method="get" accept-charset="utf-8" target="_blank" class="search-form"><input type="text" name="q" maxlength="20" placeholder="Search"/><input type="hidden" name="sitesearch" value="http://yoursite.com"/></form></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> Kategorien</i></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Beijing/">Beijing</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/C语言学习笔记/">C语言学习笔记</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/Security/">Security</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/Spark/">Spark</a><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/Spark/RDD/">RDD</a><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/Spark/RDD/source-code/">source code</a></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/Spark/configuration/">configuration</a></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/blog/">blog</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/coding/">coding</a><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/coding/compiler/">compiler</a></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/dp/">dp</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/language/">language</a><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/language/Japanese/">Japanese</a><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/language/Japanese/lyric/">lyric</a></li></ul></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/leetcode/">leetcode</a><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/leetcode/HashTable/">HashTable</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/leetcode/Two-Pointers/">Two Pointers</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/leetcode/divide-and-conquer/">divide and conquer</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/leetcode/dp/">dp</a></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/lua/">lua</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/mapreduce/">mapreduce</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/music/">music</a><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/music/guitar/">guitar</a></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/paper/">paper</a><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/paper/NLP/">NLP</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/paper/scheduler/">scheduler</a></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/programming-language/">programming language</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/python/matplotlib/">matplotlib</a></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/software-engineer/">software engineer</a><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/software-engineer/API/">API</a></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/source-code/">source code</a><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/source-code/JXIO/">JXIO</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/source-code/Spark/">Spark</a></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/spark/">spark</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/unity/">unity</a><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/unity/animation/">animation</a></li></ul></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-star-o"> Tags</i></div><div class="tagcloud"></div></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> Letzte</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2017/10/28/unity-eventfunction/">unity_eventfunction</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/10/28/learn-lua/">lua学习</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/07/08/unity-animation/">unity-animation</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/04/09/dynamic-resource-allocation/">Dynamic Resource Allocation</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/03/06/swprintf/">来聊一聊C++的string</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/08/13/beijing/">出去玩-北京</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/05/31/running-spark-on-mesos/">Running Spark on Mesos</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/04/12/spark-summary/">Spark小结</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/03/25/the-number-of-the-increasing-sub-sequences/">一个数组的递增子序列的个数</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/12/13/factorial-nonzero-suffix/">求N!的后9位不为0的数</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-external-link"> Blogroll</i></div><ul></ul><a href="http://www.example1.com/" title="site-name1" target="_blank">site-name1</a><ul></ul><a href="http://www.example2.com/" title="site-name2" target="_blank">site-name2</a><ul></ul><a href="http://www.example3.com/" title="site-name3" target="_blank">site-name3</a></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2017 <a href="/." rel="nofollow">ShallWe Talk.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div><script src="//dn-lbstatics.qbox.me/lbservice/busuanzi/2.0/busuanzi.mini.js"/></script>
+<span id="busuanzi_container_site_uv">已经有<span id="busuanzi_value_site_uv"></span>人次访问carolz的小站啦 ( •̀ ω •́ )y</span></div></div><a id="rocket" href="#top" class="show"></a><script type="text/javascript" src="/js/totop.js?v=0.0.0" async></script><script type="text/javascript" src="//cdn.bootcss.com/fancybox/3.1.20/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=0.0.0" async></script><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/fancybox/3.1.20/jquery.fancybox.min.css"><script type="text/javascript" src="/js/codeblock-resizer.js?v=0.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=0.0.0"></script></div></body></html>
